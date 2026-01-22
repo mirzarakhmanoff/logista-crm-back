@@ -1,0 +1,268 @@
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Document, DocumentStatus } from './schemas/document.schema';
+import { CreateDocumentDto } from './dto/create-document.dto';
+import { UpdateDocumentDto } from './dto/update-document.dto';
+import { FilterDocumentDto } from './dto/filter-document.dto';
+import { UpdateStatusDto } from './dto/update-status.dto';
+import { ActivitiesService } from '../activities/activities.service';
+
+@Injectable()
+export class DocumentsService {
+  constructor(
+    @InjectModel(Document.name) private documentModel: Model<Document>,
+    @Inject(forwardRef(() => ActivitiesService))
+    private activitiesService: ActivitiesService,
+  ) {}
+
+  async create(
+    createDocumentDto: CreateDocumentDto,
+    createdById: string,
+  ): Promise<Document> {
+    const document = new this.documentModel({
+      ...createDocumentDto,
+      createdBy: createdById,
+    });
+
+    return document.save();
+  }
+
+  async findAll(filterDto: FilterDocumentDto): Promise<Document[]> {
+    const query: any = {};
+
+    // Agar isArchived filter yo'q bo'lsa, faqat active dokumentlarni ko'rsatamiz
+    if (filterDto.isArchived !== undefined) {
+      query.isArchived = filterDto.isArchived;
+    } else {
+      query.isArchived = false;
+    }
+
+    // Filters
+    if (filterDto.type) query.type = filterDto.type;
+    if (filterDto.status) query.status = filterDto.status;
+    if (filterDto.priority) query.priority = filterDto.priority;
+    if (filterDto.assignedTo) query.assignedTo = filterDto.assignedTo;
+    if (filterDto.category) query.category = filterDto.category;
+
+    // Search
+    if (filterDto.search) {
+      query.$or = [
+        { title: { $regex: filterDto.search, $options: 'i' } },
+        { description: { $regex: filterDto.search, $options: 'i' } },
+        { documentNumber: { $regex: filterDto.search, $options: 'i' } },
+      ];
+    }
+
+    return this.documentModel
+      .find(query)
+      .populate('assignedTo', 'fullName avatar email')
+      .populate('createdBy', 'fullName avatar email')
+      .populate('files.uploadedBy', 'fullName avatar')
+      .sort({ createdAt: -1 })
+      .exec();
+  }
+
+  async findOne(id: string): Promise<Document> {
+    const document = await this.documentModel
+      .findById(id)
+      .populate('assignedTo', 'fullName avatar email phone')
+      .populate('createdBy', 'fullName avatar email phone')
+      .populate('files.uploadedBy', 'fullName avatar')
+      .exec();
+
+    if (!document) {
+      throw new NotFoundException(`Document with ID ${id} not found`);
+    }
+
+    return document;
+  }
+
+  async update(
+    id: string,
+    updateDocumentDto: UpdateDocumentDto,
+    userId: string,
+  ): Promise<Document> {
+    const oldDocument = await this.findOne(id);
+
+    const document = await this.documentModel
+      .findByIdAndUpdate(id, updateDocumentDto, { new: true })
+      .populate('assignedTo', 'fullName avatar email')
+      .populate('createdBy', 'fullName avatar email')
+      .exec();
+
+    if (!document) {
+      throw new NotFoundException(`Document with ID ${id} not found`);
+    }
+
+    // Agar assignedTo o'zgargan bo'lsa, activity yaratish
+    if (
+      updateDocumentDto.assignedTo &&
+      oldDocument.assignedTo.toString() !== updateDocumentDto.assignedTo
+    ) {
+      await this.activitiesService.createAssignmentChangeActivity(
+        id,
+        userId,
+        oldDocument.assignedTo.toString(),
+        updateDocumentDto.assignedTo,
+      );
+    }
+
+    return document;
+  }
+
+  async updateStatus(
+    id: string,
+    updateStatusDto: UpdateStatusDto,
+    userId: string,
+  ): Promise<Document> {
+    const document = await this.findOne(id);
+    const oldStatus = document.status;
+
+    // Agar status COMPLETED ga o'zgartirilsa, completedAt ni set qilamiz
+    const updateData: any = { status: updateStatusDto.status };
+    if (updateStatusDto.status === DocumentStatus.COMPLETED) {
+      updateData.completedAt = new Date();
+    }
+
+    const updatedDocument = await this.documentModel
+      .findByIdAndUpdate(id, updateData, { new: true })
+      .populate('assignedTo', 'fullName avatar email')
+      .populate('createdBy', 'fullName avatar email')
+      .exec();
+
+    if (!updatedDocument) {
+      throw new NotFoundException(`Document with ID ${id} not found`);
+    }
+
+    // Activity yaratish
+    await this.activitiesService.createStatusChangeActivity(
+      id,
+      userId,
+      oldStatus,
+      updateStatusDto.status,
+    );
+
+    return updatedDocument;
+  }
+
+  async remove(id: string): Promise<void> {
+    const result = await this.documentModel.findByIdAndDelete(id).exec();
+
+    if (!result) {
+      throw new NotFoundException(`Document with ID ${id} not found`);
+    }
+  }
+
+  async addFile(
+    id: string,
+    fileData: {
+      filename: string;
+      path: string;
+      mimetype: string;
+      size: number;
+      uploadedBy: string;
+    },
+  ): Promise<Document> {
+    const document = await this.documentModel
+      .findByIdAndUpdate(
+        id,
+        {
+          $push: {
+            files: {
+              ...fileData,
+              uploadedAt: new Date(),
+            },
+          },
+        },
+        { new: true },
+      )
+      .populate('assignedTo', 'fullName avatar email')
+      .populate('createdBy', 'fullName avatar email')
+      .populate('files.uploadedBy', 'fullName avatar')
+      .exec();
+
+    if (!document) {
+      throw new NotFoundException(`Document with ID ${id} not found`);
+    }
+
+    // Activity yaratish
+    await this.activitiesService.createFileUploadActivity(
+      id,
+      fileData.uploadedBy,
+      fileData.filename,
+    );
+
+    return document;
+  }
+
+  async removeFile(
+    documentId: string,
+    fileId: string,
+    userId: string,
+  ): Promise<Document> {
+    // Avval file nomini olish
+    const doc = await this.documentModel.findById(documentId).exec();
+    if (!doc) {
+      throw new NotFoundException(`Document with ID ${documentId} not found`);
+    }
+
+    const file = doc.files.find((f: any) => f._id.toString() === fileId);
+    const fileName = file ? file.filename : 'Unknown file';
+
+    const document = await this.documentModel
+      .findByIdAndUpdate(
+        documentId,
+        {
+          $pull: { files: { _id: fileId } },
+        },
+        { new: true },
+      )
+      .populate('assignedTo', 'fullName avatar email')
+      .populate('createdBy', 'fullName avatar email')
+      .populate('files.uploadedBy', 'fullName avatar')
+      .exec();
+
+    if (!document) {
+      throw new NotFoundException(`Document with ID ${documentId} not found`);
+    }
+
+    // Activity yaratish
+    await this.activitiesService.createFileDeleteActivity(
+      documentId,
+      userId,
+      fileName,
+    );
+
+    return document;
+  }
+
+  async getDocumentsByStatus(status: DocumentStatus): Promise<Document[]> {
+    return this.documentModel
+      .find({ status, isArchived: false })
+      .populate('assignedTo', 'fullName avatar email')
+      .populate('createdBy', 'fullName avatar email')
+      .sort({ createdAt: -1 })
+      .exec();
+  }
+
+  async getDocumentStats() {
+    const stats = await this.documentModel.aggregate([
+      { $match: { isArchived: false } },
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    return stats;
+  }
+}

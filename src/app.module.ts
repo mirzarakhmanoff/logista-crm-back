@@ -6,6 +6,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
+import { DocumentsModule } from './modules/documents/documents.module';
+import { ActivitiesModule } from './modules/activities/activities.module';
 import { getDatabaseConfig } from './config/database.config';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -23,6 +25,8 @@ import { RolesGuard } from './common/guards/roles.guard';
     }),
     AuthModule,
     UsersModule,
+    DocumentsModule,
+    ActivitiesModule,
   ],
   controllers: [AppController],
   providers: [
