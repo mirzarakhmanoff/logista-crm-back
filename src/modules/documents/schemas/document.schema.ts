@@ -89,8 +89,8 @@ export class Document extends MongooseDocument {
 
 export const DocumentSchema = SchemaFactory.createForClass(Document);
 
-// Auto-generate document number
-DocumentSchema.pre('save', async function () {
+// Auto-generate document number before validation
+DocumentSchema.pre('validate', async function () {
   if (!this.documentNumber) {
     const year = new Date().getFullYear();
     const Model = this.constructor as any;
