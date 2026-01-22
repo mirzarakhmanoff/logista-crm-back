@@ -312,4 +312,25 @@ export class DocumentsService {
 
     return stats;
   }
+
+  async getFile(documentId: string, fileId: string) {
+    const document = await this.documentModel.findById(documentId).exec();
+
+    if (!document) {
+      throw new NotFoundException(`Document with ID ${documentId} not found`);
+    }
+
+    const file = document.files.find((f: any) => f._id.toString() === fileId);
+
+    if (!file) {
+      throw new NotFoundException(`File with ID ${fileId} not found`);
+    }
+
+    return {
+      filename: file.filename,
+      path: file.path,
+      mimetype: file.mimetype,
+      size: file.size,
+    };
+  }
 }

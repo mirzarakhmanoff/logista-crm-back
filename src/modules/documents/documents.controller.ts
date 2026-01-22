@@ -23,7 +23,7 @@ import {
   ApiBody,
   ApiQuery,
 } from '@nestjs/swagger';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { DocumentsService } from './documents.service';
 import { CreateDocumentDto } from './dto/create-document.dto';
 import { UpdateDocumentDto } from './dto/update-document.dto';
@@ -186,6 +186,31 @@ export class DocumentsController {
     };
 
     return this.documentsService.addFile(id, fileData);
+  }
+
+  @Get(':id/files/:fileId/download')
+  @ApiOperation({ summary: 'Download file from document' })
+  @ApiResponse({
+    status: 200,
+    description: 'File downloaded successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'File not found',
+  })
+  async downloadFile(
+    @Param('id') documentId: string,
+    @Param('fileId') fileId: string,
+    @Res() res: Response,
+  ) {
+    const fileData = await this.documentsService.getFile(documentId, fileId);
+
+    res.setHeader('Content-Type', fileData.mimetype);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${encodeURIComponent(fileData.filename)}"`,
+    );
+    res.sendFile(fileData.path, { root: '.' });
   }
 
   @Delete(':id/files/:fileId')
