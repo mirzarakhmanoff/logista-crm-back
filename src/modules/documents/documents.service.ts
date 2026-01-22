@@ -13,6 +13,7 @@ import { UpdateDocumentDto } from './dto/update-document.dto';
 import { FilterDocumentDto } from './dto/filter-document.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
 import { ActivitiesService } from '../activities/activities.service';
+import { SocketGateway } from '../../socket/socket.gateway';
 
 @Injectable()
 export class DocumentsService {
@@ -20,6 +21,7 @@ export class DocumentsService {
     @InjectModel(Document.name) private documentModel: Model<Document>,
     @Inject(forwardRef(() => ActivitiesService))
     private activitiesService: ActivitiesService,
+    private socketGateway: SocketGateway,
   ) {}
 
   async create(
@@ -31,7 +33,23 @@ export class DocumentsService {
       createdBy: createdById,
     });
 
-    return document.save();
+    const savedDocument = await document.save();
+
+    // Populate qilib qaytarish
+    const populatedDocument = await this.documentModel
+      .findById(savedDocument._id)
+      .populate('assignedTo', 'fullName avatar email')
+      .populate('createdBy', 'fullName avatar email')
+      .exec();
+
+    if (!populatedDocument) {
+      throw new NotFoundException('Failed to create document');
+    }
+
+    // Real-time: Yangi dokument yaratildi (global)
+    this.socketGateway.emitDocumentCreated(populatedDocument);
+
+    return populatedDocument;
   }
 
   async findAll(filterDto: FilterDocumentDto): Promise<Document[]> {
@@ -114,6 +132,9 @@ export class DocumentsService {
       );
     }
 
+    // Real-time: Dokument yangilandi
+    this.socketGateway.emitDocumentUpdated(id, document);
+
     return document;
   }
 
@@ -149,6 +170,14 @@ export class DocumentsService {
       updateStatusDto.status,
     );
 
+    // Real-time: Status o'zgartirildi
+    this.socketGateway.emitDocumentStatusChanged(id, {
+      documentId: id,
+      oldStatus,
+      newStatus: updateStatusDto.status,
+      document: updatedDocument,
+    });
+
     return updatedDocument;
   }
 
@@ -158,6 +187,9 @@ export class DocumentsService {
     if (!result) {
       throw new NotFoundException(`Document with ID ${id} not found`);
     }
+
+    // Real-time: Dokument o'chirildi
+    this.socketGateway.emitDocumentDeleted(id);
   }
 
   async addFile(
@@ -199,6 +231,13 @@ export class DocumentsService {
       fileData.filename,
     );
 
+    // Real-time: Fayl yuklandi
+    this.socketGateway.emitFileUploaded(id, {
+      documentId: id,
+      filename: fileData.filename,
+      document,
+    });
+
     return document;
   }
 
@@ -239,6 +278,14 @@ export class DocumentsService {
       userId,
       fileName,
     );
+
+    // Real-time: Fayl o'chirildi
+    this.socketGateway.emitFileDeleted(documentId, {
+      documentId,
+      fileId,
+      filename: fileName,
+      document,
+    });
 
     return document;
   }

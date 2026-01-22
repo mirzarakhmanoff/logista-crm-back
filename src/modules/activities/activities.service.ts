@@ -7,11 +7,13 @@ import { Model } from 'mongoose';
 import { Activity, ActivityType } from './schemas/activity.schema';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { CreateActivityDto } from './dto/create-activity.dto';
+import { SocketGateway } from '../../socket/socket.gateway';
 
 @Injectable()
 export class ActivitiesService {
   constructor(
     @InjectModel(Activity.name) private activityModel: Model<Activity>,
+    private socketGateway: SocketGateway,
   ) {}
 
   async createComment(
@@ -39,6 +41,9 @@ export class ActivitiesService {
       throw new NotFoundException('Failed to create activity');
     }
 
+    // Real-time: Yangi comment qo'shildi
+    this.socketGateway.emitNewComment(documentId, populatedActivity);
+
     return populatedActivity;
   }
 
@@ -63,6 +68,9 @@ export class ActivitiesService {
     if (!populatedActivity) {
       throw new NotFoundException('Failed to create activity');
     }
+
+    // Real-time: Yangi activity qo'shildi
+    this.socketGateway.emitNewActivity(documentId, populatedActivity);
 
     return populatedActivity;
   }
