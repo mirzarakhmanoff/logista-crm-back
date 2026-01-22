@@ -45,13 +45,29 @@ export class ActivitiesController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all activities for a document (timeline)' })
+  @ApiOperation({
+    summary: 'Get recent activities for a document (last 10)',
+    description: 'Returns the last 10 activities for the timeline',
+  })
   @ApiResponse({
     status: 200,
-    description: 'List of all activities',
+    description: 'List of recent activities (max 10)',
+  })
+  async findRecent(@Param('documentId') documentId: string) {
+    return this.activitiesService.findAllByDocument(documentId, 10);
+  }
+
+  @Get('all')
+  @ApiOperation({
+    summary: 'Get ALL activities for a document (unlimited)',
+    description: 'Returns all activities without limit',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Complete list of all activities',
   })
   async findAll(@Param('documentId') documentId: string) {
-    return this.activitiesService.findAllByDocument(documentId);
+    return this.activitiesService.findAllByDocumentUnlimited(documentId);
   }
 
   @Get('comments')

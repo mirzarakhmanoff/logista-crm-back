@@ -75,7 +75,27 @@ export class ActivitiesService {
     return populatedActivity;
   }
 
-  async findAllByDocument(documentId: string): Promise<Activity[]> {
+  async findAllByDocument(
+    documentId: string,
+    limit?: number,
+  ): Promise<Activity[]> {
+    const query = this.activityModel
+      .find({ documentId })
+      .populate('userId', 'fullName avatar email')
+      .populate('mentions', 'fullName avatar email')
+      .sort({ createdAt: -1 }); // newest first
+
+    if (limit) {
+      query.limit(limit);
+    }
+
+    const activities = await query.exec();
+
+    // Agar limit bo'lsa, reverse qilamiz (oldest first)
+    return limit ? activities.reverse() : activities;
+  }
+
+  async findAllByDocumentUnlimited(documentId: string): Promise<Activity[]> {
     return this.activityModel
       .find({ documentId })
       .populate('userId', 'fullName avatar email')
