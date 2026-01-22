@@ -17,11 +17,15 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { Public } from '../../common/decorators/public.decorator';
+import { UsersService } from '../users/users.service';
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private usersService: UsersService,
+  ) {}
 
   @Public()
   @Post('register')
@@ -68,5 +72,22 @@ export class AuthController {
   })
   getProfile(@Request() req) {
     return req.user;
+  }
+
+  @Get('verify')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Verify token and return current user' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns current user data',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+  })
+  async verify(@Request() req) {
+    const user = await this.usersService.findById(req.user.sub);
+    const { password, _id, ...result } = user.toObject();
+    return { id: _id.toString(), ...result };
   }
 }

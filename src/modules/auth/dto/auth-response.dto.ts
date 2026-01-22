@@ -13,7 +13,6 @@ export class AuthResponseDto {
   })
   user: {
     id: string;
-    username: string;
     email: string;
     fullName: string;
     role: UserRole;

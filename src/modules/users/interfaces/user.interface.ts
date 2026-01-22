@@ -2,7 +2,6 @@ import { UserRole } from '../schemas/user.schema';
 
 export interface IUser {
   _id: string;
-  username: string;
   email: string;
   fullName: string;
   role: UserRole;
@@ -16,7 +15,6 @@ export interface IUser {
 
 export interface IJwtPayload {
   sub: string;
-  username: string;
   email: string;
   role: UserRole;
 }

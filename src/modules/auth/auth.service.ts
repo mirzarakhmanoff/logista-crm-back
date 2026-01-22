@@ -19,13 +19,6 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
-    const existingUser = await this.usersService.findByUsername(
-      registerDto.username,
-    );
-    if (existingUser) {
-      throw new ConflictException('Username already exists');
-    }
-
     const existingEmail = await this.usersService.findByEmail(
       registerDto.email,
     );
@@ -42,7 +35,6 @@ export class AuthService {
 
     const payload: IJwtPayload = {
       sub: user._id.toString(),
-      username: user.username,
       email: user.email,
       role: user.role,
     };
@@ -51,7 +43,6 @@ export class AuthService {
       accessToken: this.jwtService.sign(payload),
       user: {
         id: user._id.toString(),
-        username: user.username,
         email: user.email,
         fullName: user.fullName,
         role: user.role,
@@ -60,13 +51,12 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto): Promise<AuthResponseDto> {
-    const user = await this.validateUser(loginDto.username, loginDto.password);
+    const user = await this.validateUser(loginDto.email, loginDto.password);
 
     await this.usersService.updateLastLogin(user._id.toString());
 
     const payload: IJwtPayload = {
       sub: user._id.toString(),
-      username: user.username,
       email: user.email,
       role: user.role,
     };
@@ -75,7 +65,6 @@ export class AuthService {
       accessToken: this.jwtService.sign(payload),
       user: {
         id: user._id.toString(),
-        username: user.username,
         email: user.email,
         fullName: user.fullName,
         role: user.role,
@@ -83,12 +72,8 @@ export class AuthService {
     };
   }
 
-  async validateUser(username: string, password: string) {
-    let user = await this.usersService.findByUsername(username);
-
-    if (!user) {
-      user = await this.usersService.findByEmail(username);
-    }
+  async validateUser(email: string, password: string) {
+    const user = await this.usersService.findByEmail(email);
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');

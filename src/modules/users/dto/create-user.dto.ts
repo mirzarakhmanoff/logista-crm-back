@@ -12,14 +12,6 @@ import { UserRole } from '../schemas/user.schema';
 
 export class CreateUserDto {
   @ApiProperty({
-    description: 'Username',
-    example: 'john_doe',
-  })
-  @IsString()
-  @IsNotEmpty()
-  username: string;
-
-  @ApiProperty({
     description: 'Email address',
     example: 'john@example.com',
   })

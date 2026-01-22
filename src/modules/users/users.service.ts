@@ -14,10 +14,6 @@ import { UpdateUserDto } from './dto/update-user.dto';
 export class UsersService {
   constructor(@InjectModel(User.name) private userModel: Model<User>) {}
 
-  async findByUsername(username: string): Promise<User | null> {
-    return this.userModel.findOne({ username }).exec();
-  }
-
   async findByEmail(email: string): Promise<User | null> {
     return this.userModel.findOne({ email }).exec();
   }
@@ -40,12 +36,7 @@ export class UsersService {
   }
 
   async createUser(createUserDto: CreateUserDto): Promise<User> {
-    // Check if username or email already exists
-    const existingUsername = await this.findByUsername(createUserDto.username);
-    if (existingUsername) {
-      throw new ConflictException('Username already exists');
-    }
-
+    // Check if email already exists
     const existingEmail = await this.findByEmail(createUserDto.email);
     if (existingEmail) {
       throw new ConflictException('Email already exists');
@@ -65,16 +56,6 @@ export class UsersService {
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     // Check if user exists
     const user = await this.findById(id);
-
-    // Check if username is being changed and already exists
-    if (updateUserDto.username && updateUserDto.username !== user.username) {
-      const existingUsername = await this.findByUsername(
-        updateUserDto.username,
-      );
-      if (existingUsername) {
-        throw new ConflictException('Username already exists');
-      }
-    }
 
     // Check if email is being changed and already exists
     if (updateUserDto.email && updateUserDto.email !== user.email) {

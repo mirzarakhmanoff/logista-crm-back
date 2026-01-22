@@ -11,15 +11,6 @@ import { UserRole } from '../schemas/user.schema';
 
 export class UpdateUserDto {
   @ApiProperty({
-    description: 'Username',
-    example: 'john_doe',
-    required: false,
-  })
-  @IsString()
-  @IsOptional()
-  username?: string;
-
-  @ApiProperty({
     description: 'Email address',
     example: 'john@example.com',
     required: false,
