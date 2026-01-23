@@ -8,6 +8,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { ActivitiesModule } from './modules/activities/activities.module';
+import { ClientsModule } from './modules/clients/clients.module';
+import { DealsModule } from './modules/deals/deals.module';
 import { SocketModule } from './socket/socket.module';
 import { getDatabaseConfig } from './config/database.config';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -29,6 +31,8 @@ import { RolesGuard } from './common/guards/roles.guard';
     UsersModule,
     DocumentsModule,
     ActivitiesModule,
+    ClientsModule,
+    DealsModule,
   ],
   controllers: [AppController],
   providers: [
