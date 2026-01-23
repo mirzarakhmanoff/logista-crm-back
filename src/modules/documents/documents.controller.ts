@@ -13,6 +13,7 @@ import {
   HttpStatus,
   Res,
 } from '@nestjs/common';
+import { resolve } from 'path';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
@@ -226,5 +227,26 @@ export class DocumentsController {
     @CurrentUser() user: any,
   ) {
     return this.documentsService.removeFile(documentId, fileId, user.userId);
+  }
+
+  @Get(':id/files/:fileId')
+  @ApiOperation({ summary: 'Download file from document' })
+  @ApiResponse({
+    status: 200,
+    description: 'File stream',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'File not found',
+  })
+  async getFile(
+    @Param('id') documentId: string,
+    @Param('fileId') fileId: string,
+    @Res() res: Response,
+  ) {
+    const file = await this.documentsService.getFile(documentId, fileId);
+    const filePath = resolve(file.path);
+    res.setHeader('Content-Type', file.mimetype);
+    return res.sendFile(filePath);
   }
 }

@@ -5,6 +5,7 @@ import {
   Inject,
   forwardRef,
 } from '@nestjs/common';
+import * as fs from 'fs';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Document, DocumentStatus } from './schemas/document.schema';
@@ -324,6 +325,10 @@ export class DocumentsService {
 
     if (!file) {
       throw new NotFoundException(`File with ID ${fileId} not found`);
+    }
+
+    if (!file.path || !fs.existsSync(file.path)) {
+      throw new NotFoundException('File not found on disk');
     }
 
     return {
