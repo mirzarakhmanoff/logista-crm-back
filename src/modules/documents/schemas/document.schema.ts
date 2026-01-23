@@ -8,6 +8,7 @@ export enum DocumentStatus {
   APPROVED = 'approved',
   SENT = 'sent',
   COMPLETED = 'completed',
+  ARCHIVED = 'archived',
 }
 
 export enum DocumentType {

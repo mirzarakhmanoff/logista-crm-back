@@ -8,13 +8,13 @@ import {
   Delete,
   Query,
   UseInterceptors,
-  UploadedFile,
+  UploadedFiles,
   HttpCode,
   HttpStatus,
   Res,
 } from '@nestjs/common';
 import { resolve } from 'path';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiOperation,
@@ -151,42 +151,45 @@ export class DocumentsController {
 
   @Post(':id/files')
   @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT)
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(AnyFilesInterceptor())
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Upload file to document' })
+  @ApiOperation({ summary: 'Upload file(s) to document' })
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
-        file: {
-          type: 'string',
-          format: 'binary',
+        files: {
+          type: 'array',
+          items: {
+            type: 'string',
+            format: 'binary',
+          },
         },
       },
     },
   })
   @ApiResponse({
     status: 200,
-    description: 'File uploaded successfully',
+    description: 'File(s) uploaded successfully',
   })
   async uploadFile(
     @Param('id') id: string,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFiles() files: Express.Multer.File[],
     @CurrentUser() user: any,
   ) {
-    if (!file) {
-      throw new Error('No file uploaded');
+    if (!files || files.length === 0) {
+      throw new Error('No files uploaded');
     }
 
-    const fileData = {
+    const fileDataList = files.map((file) => ({
       filename: file.originalname,
       path: file.path,
       mimetype: file.mimetype,
       size: file.size,
       uploadedBy: user.userId,
-    };
+    }));
 
-    return this.documentsService.addFile(id, fileData);
+    return this.documentsService.addFiles(id, fileDataList);
   }
 
   @Get(':id/files/:fileId/download')

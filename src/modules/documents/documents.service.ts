@@ -59,6 +59,8 @@ export class DocumentsService {
     // Agar isArchived filter yo'q bo'lsa, faqat active dokumentlarni ko'rsatamiz
     if (filterDto.isArchived !== undefined) {
       query.isArchived = filterDto.isArchived;
+    } else if (filterDto.status === DocumentStatus.ARCHIVED) {
+      query.isArchived = true;
     } else {
       query.isArchived = false;
     }
@@ -152,6 +154,11 @@ export class DocumentsService {
     if (updateStatusDto.status === DocumentStatus.COMPLETED) {
       updateData.completedAt = new Date();
     }
+    if (updateStatusDto.status === DocumentStatus.ARCHIVED) {
+      updateData.isArchived = true;
+    } else {
+      updateData.isArchived = false;
+    }
 
     const updatedDocument = await this.documentModel
       .findByIdAndUpdate(id, updateData, { new: true })
@@ -193,24 +200,29 @@ export class DocumentsService {
     this.socketGateway.emitDocumentDeleted(id);
   }
 
-  async addFile(
+  async addFiles(
     id: string,
-    fileData: {
+    fileDataList: {
       filename: string;
       path: string;
       mimetype: string;
       size: number;
       uploadedBy: string;
-    },
+    }[],
   ): Promise<Document> {
+    const now = new Date();
+    const filesToAdd = fileDataList.map((fileData) => ({
+      ...fileData,
+      uploadedAt: now,
+    }));
+
     const document = await this.documentModel
       .findByIdAndUpdate(
         id,
         {
           $push: {
             files: {
-              ...fileData,
-              uploadedAt: new Date(),
+              $each: filesToAdd,
             },
           },
         },
@@ -226,18 +238,20 @@ export class DocumentsService {
     }
 
     // Activity yaratish
-    await this.activitiesService.createFileUploadActivity(
-      id,
-      fileData.uploadedBy,
-      fileData.filename,
-    );
+    for (const fileData of fileDataList) {
+      await this.activitiesService.createFileUploadActivity(
+        id,
+        fileData.uploadedBy,
+        fileData.filename,
+      );
 
-    // Real-time: Fayl yuklandi
-    this.socketGateway.emitFileUploaded(id, {
-      documentId: id,
-      filename: fileData.filename,
-      document,
-    });
+      // Real-time: Fayl yuklandi
+      this.socketGateway.emitFileUploaded(id, {
+        documentId: id,
+        filename: fileData.filename,
+        document,
+      });
+    }
 
     return document;
   }
@@ -292,8 +306,12 @@ export class DocumentsService {
   }
 
   async getDocumentsByStatus(status: DocumentStatus): Promise<Document[]> {
+    const query =
+      status === DocumentStatus.ARCHIVED
+        ? { status, isArchived: true }
+        : { status, isArchived: false };
     return this.documentModel
-      .find({ status, isArchived: false })
+      .find(query)
       .populate('assignedTo', 'fullName avatar email')
       .populate('createdBy', 'fullName avatar email')
       .sort({ createdAt: -1 })
