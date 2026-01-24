@@ -38,7 +38,7 @@ export class RegisterDto {
   @ApiProperty({
     description: 'User role',
     enum: UserRole,
-    example: UserRole.AGENT,
+    example: UserRole.OPERATOR,
     required: false,
   })
   @IsEnum(UserRole)

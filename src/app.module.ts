@@ -7,9 +7,15 @@ import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { DocumentsModule } from './modules/documents/documents.module';
-import { ActivitiesModule } from './modules/activities/activities.module';
 import { ClientsModule } from './modules/clients/clients.module';
-import { DealsModule } from './modules/deals/deals.module';
+import { RequestsModule } from './modules/requests/requests.module';
+import { RequestStatusesModule } from './modules/request-statuses/request-statuses.module';
+import { RateQuotesModule } from './modules/rate-quotes/rate-quotes.module';
+import { IssuedCodesModule } from './modules/issued-codes/issued-codes.module';
+import { ShipmentsModule } from './modules/shipments/shipments.module';
+import { InvoicesModule } from './modules/invoices/invoices.module';
+import { ActivityLogsModule } from './modules/activity-logs/activity-logs.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { SocketModule } from './socket/socket.module';
 import { getDatabaseConfig } from './config/database.config';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -30,9 +36,15 @@ import { RolesGuard } from './common/guards/roles.guard';
     AuthModule,
     UsersModule,
     DocumentsModule,
-    ActivitiesModule,
     ClientsModule,
-    DealsModule,
+    RequestsModule,
+    RequestStatusesModule,
+    RateQuotesModule,
+    IssuedCodesModule,
+    ShipmentsModule,
+    InvoicesModule,
+    ActivityLogsModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [

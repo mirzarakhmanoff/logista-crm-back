@@ -1,9 +1,6 @@
 import {
   Injectable,
   NotFoundException,
-  BadRequestException,
-  Inject,
-  forwardRef,
 } from '@nestjs/common';
 import * as fs from 'fs';
 import { InjectModel } from '@nestjs/mongoose';
@@ -13,15 +10,14 @@ import { CreateDocumentDto } from './dto/create-document.dto';
 import { UpdateDocumentDto } from './dto/update-document.dto';
 import { FilterDocumentDto } from './dto/filter-document.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
-import { ActivitiesService } from '../activities/activities.service';
+import { ActivityLogsService } from '../activity-logs/activity-logs.service';
 import { SocketGateway } from '../../socket/socket.gateway';
 
 @Injectable()
 export class DocumentsService {
   constructor(
     @InjectModel(Document.name) private documentModel: Model<Document>,
-    @Inject(forwardRef(() => ActivitiesService))
-    private activitiesService: ActivitiesService,
+    private activityLogsService: ActivityLogsService,
     private socketGateway: SocketGateway,
   ) {}
 
@@ -36,7 +32,6 @@ export class DocumentsService {
 
     const savedDocument = await document.save();
 
-    // Populate qilib qaytarish
     const populatedDocument = await this.documentModel
       .findById(savedDocument._id)
       .populate('assignedTo', 'fullName avatar email')
@@ -47,8 +42,7 @@ export class DocumentsService {
       throw new NotFoundException('Failed to create document');
     }
 
-    // Real-time: Yangi dokument yaratildi (global)
-    this.socketGateway.emitDocumentCreated(populatedDocument);
+    this.socketGateway.emitToAll('documentCreated', populatedDocument);
 
     return populatedDocument;
   }
@@ -56,7 +50,6 @@ export class DocumentsService {
   async findAll(filterDto: FilterDocumentDto): Promise<Document[]> {
     const query: any = {};
 
-    // Agar isArchived filter yo'q bo'lsa, faqat active dokumentlarni ko'rsatamiz
     if (filterDto.isArchived !== undefined) {
       query.isArchived = filterDto.isArchived;
     } else if (filterDto.status === DocumentStatus.ARCHIVED) {
@@ -65,14 +58,12 @@ export class DocumentsService {
       query.isArchived = false;
     }
 
-    // Filters
     if (filterDto.type) query.type = filterDto.type;
     if (filterDto.status) query.status = filterDto.status;
     if (filterDto.priority) query.priority = filterDto.priority;
     if (filterDto.assignedTo) query.assignedTo = filterDto.assignedTo;
     if (filterDto.category) query.category = filterDto.category;
 
-    // Search
     if (filterDto.search) {
       query.$or = [
         { title: { $regex: filterDto.search, $options: 'i' } },
@@ -110,8 +101,6 @@ export class DocumentsService {
     updateDocumentDto: UpdateDocumentDto,
     userId: string,
   ): Promise<Document> {
-    const oldDocument = await this.findOne(id);
-
     const document = await this.documentModel
       .findByIdAndUpdate(id, updateDocumentDto, { new: true })
       .populate('assignedTo', 'fullName avatar email')
@@ -122,21 +111,15 @@ export class DocumentsService {
       throw new NotFoundException(`Document with ID ${id} not found`);
     }
 
-    // Agar assignedTo o'zgargan bo'lsa, activity yaratish
-    if (
-      updateDocumentDto.assignedTo &&
-      oldDocument.assignedTo.toString() !== updateDocumentDto.assignedTo
-    ) {
-      await this.activitiesService.createAssignmentChangeActivity(
-        id,
-        userId,
-        oldDocument.assignedTo.toString(),
-        updateDocumentDto.assignedTo,
-      );
-    }
+    await this.activityLogsService.log({
+      entityType: 'CLIENT',
+      entityId: id,
+      action: 'updated',
+      message: 'Document updated',
+      userId,
+    });
 
-    // Real-time: Dokument yangilandi
-    this.socketGateway.emitDocumentUpdated(id, document);
+    this.socketGateway.emitToAll('documentUpdated', document);
 
     return document;
   }
@@ -149,7 +132,6 @@ export class DocumentsService {
     const document = await this.findOne(id);
     const oldStatus = document.status;
 
-    // Agar status COMPLETED ga o'zgartirilsa, completedAt ni set qilamiz
     const updateData: any = { status: updateStatusDto.status };
     if (updateStatusDto.status === DocumentStatus.COMPLETED) {
       updateData.completedAt = new Date();
@@ -170,16 +152,15 @@ export class DocumentsService {
       throw new NotFoundException(`Document with ID ${id} not found`);
     }
 
-    // Activity yaratish
-    await this.activitiesService.createStatusChangeActivity(
-      id,
+    await this.activityLogsService.log({
+      entityType: 'CLIENT',
+      entityId: id,
+      action: 'status_changed',
+      message: `Status changed from ${oldStatus} to ${updateStatusDto.status}`,
       userId,
-      oldStatus,
-      updateStatusDto.status,
-    );
+    });
 
-    // Real-time: Status o'zgartirildi
-    this.socketGateway.emitDocumentStatusChanged(id, {
+    this.socketGateway.emitToAll('documentStatusChanged', {
       documentId: id,
       oldStatus,
       newStatus: updateStatusDto.status,
@@ -196,8 +177,7 @@ export class DocumentsService {
       throw new NotFoundException(`Document with ID ${id} not found`);
     }
 
-    // Real-time: Dokument o'chirildi
-    this.socketGateway.emitDocumentDeleted(id);
+    this.socketGateway.emitToAll('documentDeleted', { documentId: id });
   }
 
   async addFiles(
@@ -237,16 +217,16 @@ export class DocumentsService {
       throw new NotFoundException(`Document with ID ${id} not found`);
     }
 
-    // Activity yaratish
     for (const fileData of fileDataList) {
-      await this.activitiesService.createFileUploadActivity(
-        id,
-        fileData.uploadedBy,
-        fileData.filename,
-      );
+      await this.activityLogsService.log({
+        entityType: 'CLIENT',
+        entityId: id,
+        action: 'file_uploaded',
+        message: `File uploaded: ${fileData.filename}`,
+        userId: fileData.uploadedBy,
+      });
 
-      // Real-time: Fayl yuklandi
-      this.socketGateway.emitFileUploaded(id, {
+      this.socketGateway.emitToAll('fileUploaded', {
         documentId: id,
         filename: fileData.filename,
         document,
@@ -261,7 +241,6 @@ export class DocumentsService {
     fileId: string,
     userId: string,
   ): Promise<Document> {
-    // Avval file nomini olish
     const doc = await this.documentModel.findById(documentId).exec();
     if (!doc) {
       throw new NotFoundException(`Document with ID ${documentId} not found`);
@@ -287,15 +266,15 @@ export class DocumentsService {
       throw new NotFoundException(`Document with ID ${documentId} not found`);
     }
 
-    // Activity yaratish
-    await this.activitiesService.createFileDeleteActivity(
-      documentId,
+    await this.activityLogsService.log({
+      entityType: 'CLIENT',
+      entityId: documentId,
+      action: 'deleted',
+      message: `File deleted: ${fileName}`,
       userId,
-      fileName,
-    );
+    });
 
-    // Real-time: Fayl o'chirildi
-    this.socketGateway.emitFileDeleted(documentId, {
+    this.socketGateway.emitToAll('fileDeleted', {
       documentId,
       fileId,
       filename: fileName,

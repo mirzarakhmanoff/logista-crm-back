@@ -1,4 +1,4 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -6,7 +6,7 @@ import { extname } from 'path';
 import { Document, DocumentSchema } from './schemas/document.schema';
 import { DocumentsService } from './documents.service';
 import { DocumentsController } from './documents.controller';
-import { ActivitiesModule } from '../activities/activities.module';
+import { ActivityLogsModule } from '../activity-logs/activity-logs.module';
 
 @Module({
   imports: [
@@ -27,7 +27,7 @@ import { ActivitiesModule } from '../activities/activities.module';
         fileSize: 10 * 1024 * 1024, // 10MB
       },
     }),
-    forwardRef(() => ActivitiesModule),
+    ActivityLogsModule,
   ],
   controllers: [DocumentsController],
   providers: [DocumentsService],

@@ -1,0 +1,46 @@
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document, Types } from 'mongoose';
+
+export enum EntityType {
+  CLIENT = 'CLIENT',
+  REQUEST = 'REQUEST',
+  SHIPMENT = 'SHIPMENT',
+  INVOICE = 'INVOICE',
+  RATE_QUOTE = 'RATE_QUOTE',
+  ISSUED_CODE = 'ISSUED_CODE',
+}
+
+export enum ActionType {
+  CREATED = 'created',
+  UPDATED = 'updated',
+  STATUS_CHANGED = 'status_changed',
+  FILE_UPLOADED = 'file_uploaded',
+  COMMENT = 'comment',
+  DELETED = 'deleted',
+}
+
+@Schema({ timestamps: true, collection: 'activity_logs' })
+export class ActivityLog extends Document {
+  @Prop({ type: String, enum: EntityType, required: true })
+  entityType: EntityType;
+
+  @Prop({ type: Types.ObjectId, required: true })
+  entityId: Types.ObjectId;
+
+  @Prop({ type: String, enum: ActionType, required: true })
+  action: ActionType;
+
+  @Prop()
+  message?: string;
+
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  userId?: Types.ObjectId;
+
+  @Prop({ type: Object })
+  metadata?: Record<string, any>;
+}
+
+export const ActivityLogSchema = SchemaFactory.createForClass(ActivityLog);
+
+ActivityLogSchema.index({ entityType: 1, entityId: 1, createdAt: -1 });
+ActivityLogSchema.index({ userId: 1, createdAt: -1 });

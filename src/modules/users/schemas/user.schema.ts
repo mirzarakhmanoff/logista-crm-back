@@ -4,8 +4,8 @@ import { Document } from 'mongoose';
 export enum UserRole {
   ADMIN = 'admin',
   MANAGER = 'manager',
+  OPERATOR = 'operator',
   ACCOUNTANT = 'accountant',
-  AGENT = 'agent',
 }
 
 @Schema({ timestamps: true })
@@ -19,7 +19,7 @@ export class User extends Document {
   @Prop({ required: true })
   fullName: string;
 
-  @Prop({ type: String, enum: UserRole, default: UserRole.AGENT })
+  @Prop({ type: String, enum: UserRole, default: UserRole.OPERATOR })
   role: UserRole;
 
   @Prop({ default: true })

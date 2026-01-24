@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Client } from './schemas/client.schema';
@@ -6,15 +6,12 @@ import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { FilterClientDto } from './dto/filter-client.dto';
 import { SocketGateway } from '../../socket/socket.gateway';
-import { DealsService } from '../deals/deals.service';
 
 @Injectable()
 export class ClientsService {
   constructor(
     @InjectModel(Client.name) private clientModel: Model<Client>,
     private socketGateway: SocketGateway,
-    @Inject(forwardRef(() => DealsService))
-    private dealsService: DealsService,
   ) {}
 
   async create(createClientDto: CreateClientDto, createdById: string): Promise<Client> {
@@ -27,8 +24,7 @@ export class ClientsService {
 
     const populatedClient = await this.clientModel
       .findById(savedClient._id)
-      .populate('assignedManager', 'fullName avatar email')
-      .populate('createdBy', 'fullName avatar email')
+      .populate('createdBy', 'fullName email')
       .exec();
 
     if (!populatedClient) {
@@ -40,43 +36,39 @@ export class ClientsService {
     return populatedClient;
   }
 
-  async findAll(filterDto: FilterClientDto): Promise<Client[]> {
+  async findAll(filterDto: FilterClientDto): Promise<{ data: Client[]; total: number; page: number; limit: number }> {
     const query: any = {};
-
-    if (filterDto.isArchived !== undefined) {
-      query.isArchived = filterDto.isArchived;
-    } else {
-      query.isArchived = false;
-    }
-
-    if (filterDto.type) query.type = filterDto.type;
-    if (filterDto.category) query.category = filterDto.category;
-    if (filterDto.supportLevel) query.supportLevel = filterDto.supportLevel;
-    if (filterDto.status) query.status = filterDto.status;
-    if (filterDto.assignedManager) query.assignedManager = filterDto.assignedManager;
+    const page = filterDto.page || 1;
+    const limit = filterDto.limit || 20;
+    const skip = (page - 1) * limit;
 
     if (filterDto.search) {
       query.$or = [
-        { companyName: { $regex: filterDto.search, $options: 'i' } },
+        { name: { $regex: filterDto.search, $options: 'i' } },
+        { company: { $regex: filterDto.search, $options: 'i' } },
         { email: { $regex: filterDto.search, $options: 'i' } },
         { phone: { $regex: filterDto.search, $options: 'i' } },
-        { clientNumber: { $regex: filterDto.search, $options: 'i' } },
       ];
     }
 
-    return this.clientModel
-      .find(query)
-      .populate('assignedManager', 'fullName avatar email')
-      .populate('createdBy', 'fullName avatar email')
-      .sort({ createdAt: -1 })
-      .exec();
+    const [data, total] = await Promise.all([
+      this.clientModel
+        .find(query)
+        .populate('createdBy', 'fullName email')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      this.clientModel.countDocuments(query),
+    ]);
+
+    return { data, total, page, limit };
   }
 
   async findOne(id: string): Promise<Client> {
     const client = await this.clientModel
       .findById(id)
-      .populate('assignedManager', 'fullName avatar email phone')
-      .populate('createdBy', 'fullName avatar email phone')
+      .populate('createdBy', 'fullName email')
       .exec();
 
     if (!client) {
@@ -89,8 +81,7 @@ export class ClientsService {
   async update(id: string, updateClientDto: UpdateClientDto): Promise<Client> {
     const client = await this.clientModel
       .findByIdAndUpdate(id, updateClientDto, { new: true })
-      .populate('assignedManager', 'fullName avatar email')
-      .populate('createdBy', 'fullName avatar email')
+      .populate('createdBy', 'fullName email')
       .exec();
 
     if (!client) {
@@ -110,46 +101,5 @@ export class ClientsService {
     }
 
     this.socketGateway.emitToAll('clientDeleted', { clientId: id });
-  }
-
-  async getClientStats() {
-    const byStatus = await this.clientModel.aggregate([
-      { $match: { isArchived: false } },
-      {
-        $group: {
-          _id: '$status',
-          count: { $sum: 1 },
-        },
-      },
-    ]);
-
-    const byType = await this.clientModel.aggregate([
-      { $match: { isArchived: false } },
-      {
-        $group: {
-          _id: '$type',
-          count: { $sum: 1 },
-        },
-      },
-    ]);
-
-    const bySupportLevel = await this.clientModel.aggregate([
-      { $match: { isArchived: false } },
-      {
-        $group: {
-          _id: '$supportLevel',
-          count: { $sum: 1 },
-        },
-      },
-    ]);
-
-    const total = await this.clientModel.countDocuments({ isArchived: false });
-
-    return { byStatus, byType, bySupportLevel, total };
-  }
-
-  async getClientDeals(clientId: string) {
-    await this.findOne(clientId);
-    return this.dealsService.findByClient(clientId);
   }
 }
