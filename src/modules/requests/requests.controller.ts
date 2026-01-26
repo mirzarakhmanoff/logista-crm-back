@@ -17,6 +17,7 @@ import { UpdateRequestDto } from './dto/update-request.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
 import { FilterRequestDto } from './dto/filter-request.dto';
 import { MoveRequestDto } from './dto/move-request.dto';
+import { AddCommentDto } from './dto/add-comment.dto';
 import { RequestType } from './schemas/request.schema';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
@@ -85,6 +86,21 @@ export class RequestsController {
     @CurrentUser() user: any,
   ) {
     return this.requestsService.moveRequest(id, moveDto, user.userId);
+  }
+
+  @Post(':id/comments')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR)
+  async addComment(
+    @Param('id') id: string,
+    @Body() addCommentDto: AddCommentDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.requestsService.addComment(id, addCommentDto, user.userId);
+  }
+
+  @Get(':id/comments')
+  async getComments(@Param('id') id: string) {
+    return this.requestsService.getComments(id);
   }
 
   @Delete(':id')

@@ -13,8 +13,10 @@ import { CreateRequestDto } from './dto/create-request.dto';
 import { UpdateRequestDto } from './dto/update-request.dto';
 import { FilterRequestDto } from './dto/filter-request.dto';
 import { MoveRequestDto } from './dto/move-request.dto';
+import { AddCommentDto } from './dto/add-comment.dto';
 import { SocketGateway } from '../../socket/socket.gateway';
 import { ActivityLogsService } from '../activity-logs/activity-logs.service';
+import { ActivityLog } from '../activity-logs/schemas/activity-log.schema';
 
 @Injectable()
 export class RequestsService {
@@ -389,6 +391,39 @@ export class RequestsService {
       .populate('createdBy', 'fullName email')
       .sort({ createdAt: -1 })
       .exec();
+  }
+
+  async addComment(requestId: string, dto: AddCommentDto, userId: string): Promise<ActivityLog> {
+    const request = await this.requestModel.findById(requestId).exec();
+    if (!request) {
+      throw new NotFoundException(`Request with ID ${requestId} not found`);
+    }
+
+    const comment = await this.activityLogsService.log({
+      entityType: 'REQUEST',
+      entityId: requestId,
+      action: 'comment',
+      message: dto.content,
+      userId,
+      metadata: { content: dto.content },
+    });
+
+    this.socketGateway.emitToAll('requestCommentAdded', {
+      requestId,
+      comment,
+    });
+
+    return comment;
+  }
+
+  async getComments(requestId: string): Promise<ActivityLog[]> {
+    const request = await this.requestModel.findById(requestId).exec();
+    if (!request) {
+      throw new NotFoundException(`Request with ID ${requestId} not found`);
+    }
+
+    const activities = await this.activityLogsService.findByEntity('REQUEST', requestId);
+    return activities.filter(a => a.action === 'comment');
   }
 
   async remove(id: string): Promise<void> {
