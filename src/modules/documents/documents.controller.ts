@@ -252,4 +252,42 @@ export class DocumentsController {
     res.setHeader('Content-Type', file.mimetype);
     return res.sendFile(filePath);
   }
+
+  @Get(':id/activities')
+  @ApiOperation({ summary: 'Get document activities (logs and comments)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Document activities',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Document not found',
+  })
+  async getActivities(@Param('id') id: string) {
+    return this.documentsService.getActivities(id);
+  }
+
+  @Post(':id/activities/comments')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT)
+  @ApiOperation({ summary: 'Add comment to document' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        content: { type: 'string' },
+      },
+      required: ['content'],
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Comment added successfully',
+  })
+  async addComment(
+    @Param('id') id: string,
+    @Body('content') content: string,
+    @CurrentUser() user: any,
+  ) {
+    return this.documentsService.addComment(id, content, user.userId);
+  }
 }

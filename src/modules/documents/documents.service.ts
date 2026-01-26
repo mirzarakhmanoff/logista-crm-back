@@ -112,7 +112,7 @@ export class DocumentsService {
     }
 
     await this.activityLogsService.log({
-      entityType: 'CLIENT',
+      entityType: 'DOCUMENT',
       entityId: id,
       action: 'updated',
       message: 'Document updated',
@@ -153,7 +153,7 @@ export class DocumentsService {
     }
 
     await this.activityLogsService.log({
-      entityType: 'CLIENT',
+      entityType: 'DOCUMENT',
       entityId: id,
       action: 'status_changed',
       message: `Status changed from ${oldStatus} to ${updateStatusDto.status}`,
@@ -219,7 +219,7 @@ export class DocumentsService {
 
     for (const fileData of fileDataList) {
       await this.activityLogsService.log({
-        entityType: 'CLIENT',
+        entityType: 'DOCUMENT',
         entityId: id,
         action: 'file_uploaded',
         message: `File uploaded: ${fileData.filename}`,
@@ -267,7 +267,7 @@ export class DocumentsService {
     }
 
     await this.activityLogsService.log({
-      entityType: 'CLIENT',
+      entityType: 'DOCUMENT',
       entityId: documentId,
       action: 'deleted',
       message: `File deleted: ${fileName}`,
@@ -334,5 +334,34 @@ export class DocumentsService {
       mimetype: file.mimetype,
       size: file.size,
     };
+  }
+
+  async getActivities(documentId: string) {
+    const document = await this.documentModel.findById(documentId).exec();
+    if (!document) {
+      throw new NotFoundException(`Document with ID ${documentId} not found`);
+    }
+
+    return this.activityLogsService.findByEntity('DOCUMENT', documentId);
+  }
+
+  async addComment(documentId: string, message: string, userId: string) {
+    const document = await this.documentModel.findById(documentId).exec();
+    if (!document) {
+      throw new NotFoundException(`Document with ID ${documentId} not found`);
+    }
+
+    await this.activityLogsService.log({
+      entityType: 'DOCUMENT',
+      entityId: documentId,
+      action: 'comment',
+      message,
+      userId,
+      metadata: {
+        content: message,
+      },
+    });
+
+    return this.activityLogsService.findByEntity('DOCUMENT', documentId);
   }
 }

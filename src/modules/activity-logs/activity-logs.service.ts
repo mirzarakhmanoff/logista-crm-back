@@ -25,7 +25,7 @@ export class ActivityLogsService {
   async findByEntity(entityType: string, entityId: string, limit = 50): Promise<ActivityLog[]> {
     return this.activityLogModel
       .find({ entityType, entityId: new Types.ObjectId(entityId) })
-      .populate('userId', 'fullName email')
+      .populate('userId', 'fullName email avatar')
       .sort({ createdAt: -1 })
       .limit(limit)
       .exec();
@@ -34,6 +34,7 @@ export class ActivityLogsService {
   async findByUser(userId: string, limit = 50): Promise<ActivityLog[]> {
     return this.activityLogModel
       .find({ userId: new Types.ObjectId(userId) })
+      .populate('userId', 'fullName email avatar')
       .sort({ createdAt: -1 })
       .limit(limit)
       .exec();
@@ -42,7 +43,7 @@ export class ActivityLogsService {
   async findRecent(limit = 100): Promise<ActivityLog[]> {
     return this.activityLogModel
       .find()
-      .populate('userId', 'fullName email')
+      .populate('userId', 'fullName email avatar')
       .sort({ createdAt: -1 })
       .limit(limit)
       .exec();

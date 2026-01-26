@@ -8,6 +8,7 @@ export enum EntityType {
   INVOICE = 'INVOICE',
   RATE_QUOTE = 'RATE_QUOTE',
   ISSUED_CODE = 'ISSUED_CODE',
+  DOCUMENT = 'DOCUMENT',
 }
 
 export enum ActionType {
@@ -41,6 +42,17 @@ export class ActivityLog extends Document {
 }
 
 export const ActivityLogSchema = SchemaFactory.createForClass(ActivityLog);
+
+ActivityLogSchema.virtual('content').get(function content() {
+  if (this.action !== ActionType.COMMENT) {
+    return undefined;
+  }
+
+  return this.metadata?.content ?? this.message;
+});
+
+ActivityLogSchema.set('toJSON', { virtuals: true });
+ActivityLogSchema.set('toObject', { virtuals: true });
 
 ActivityLogSchema.index({ entityType: 1, entityId: 1, createdAt: -1 });
 ActivityLogSchema.index({ userId: 1, createdAt: -1 });
