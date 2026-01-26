@@ -9,8 +9,14 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseInterceptors,
+  UploadedFiles,
+  Res,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
+import { ApiBearerAuth, ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { resolve } from 'path';
+import type { Response } from 'express';
 import { RequestsService } from './requests.service';
 import { CreateRequestDto } from './dto/create-request.dto';
 import { UpdateRequestDto } from './dto/update-request.dto';
@@ -101,6 +107,78 @@ export class RequestsController {
   @Get(':id/comments')
   async getComments(@Param('id') id: string) {
     return this.requestsService.getComments(id);
+  }
+
+  @Post(':id/files')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR)
+  @UseInterceptors(AnyFilesInterceptor())
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        files: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+        },
+      },
+    },
+  })
+  async uploadFiles(
+    @Param('id') id: string,
+    @UploadedFiles() files: Express.Multer.File[],
+    @CurrentUser() user: any,
+  ) {
+    if (!files || files.length === 0) {
+      throw new Error('No files uploaded');
+    }
+    return this.requestsService.addFiles(id, files, user.userId);
+  }
+
+  @Get(':id/files')
+  async getFiles(@Param('id') id: string) {
+    return this.requestsService.getFiles(id);
+  }
+
+  @Get(':id/files/:fileId')
+  async getFile(
+    @Param('id') id: string,
+    @Param('fileId') fileId: string,
+    @Res() res: Response,
+  ) {
+    const file = await this.requestsService.getFile(id, fileId);
+    const filePath = resolve(file.path);
+    res.setHeader('Content-Type', file.mimetype);
+    res.setHeader(
+      'Content-Disposition',
+      `inline; filename="${encodeURIComponent(file.originalName)}"`,
+    );
+    return res.sendFile(filePath);
+  }
+
+  @Get(':id/files/:fileId/download')
+  async downloadFile(
+    @Param('id') id: string,
+    @Param('fileId') fileId: string,
+    @Res() res: Response,
+  ) {
+    const file = await this.requestsService.getFile(id, fileId);
+    res.setHeader('Content-Type', file.mimetype);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${encodeURIComponent(file.originalName)}"`,
+    );
+    res.sendFile(file.path, { root: '.' });
+  }
+
+  @Delete(':id/files/:fileId')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR)
+  async deleteFile(
+    @Param('id') id: string,
+    @Param('fileId') fileId: string,
+    @CurrentUser() user: any,
+  ) {
+    return this.requestsService.removeFile(id, fileId, user.userId);
   }
 
   @Delete(':id')

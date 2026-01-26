@@ -1,12 +1,14 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import * as fs from 'fs';
 import {
   Request,
   RequestStatusKey,
   RequestType,
   REQUEST_STATUS_DEFINITIONS,
   REQUEST_STATUS_TRANSITIONS,
+  RequestFile,
 } from './schemas/request.schema';
 import { Client } from '../clients/schemas/client.schema';
 import { CreateRequestDto } from './dto/create-request.dto';
@@ -424,6 +426,139 @@ export class RequestsService {
 
     const activities = await this.activityLogsService.findByEntity('REQUEST', requestId);
     return activities.filter(a => a.action === 'comment');
+  }
+
+  async addFiles(
+    requestId: string,
+    files: Express.Multer.File[],
+    userId: string,
+  ): Promise<Request> {
+    const request = await this.requestModel.findById(requestId).exec();
+    if (!request) {
+      throw new NotFoundException(`Request with ID ${requestId} not found`);
+    }
+
+    const now = new Date();
+    const filesToAdd = files.map((file) => ({
+      filename: file.filename,
+      originalName: file.originalname,
+      path: file.path,
+      mimetype: file.mimetype,
+      size: file.size,
+      uploadedAt: now,
+      uploadedBy: new Types.ObjectId(userId),
+    }));
+
+    const updatedRequest = await this.requestModel
+      .findByIdAndUpdate(
+        requestId,
+        { $push: { files: { $each: filesToAdd } } },
+        { new: true },
+      )
+      .populate('clientId', 'name company phone email')
+      .populate('assignedTo', 'fullName email')
+      .populate('createdBy', 'fullName email')
+      .populate('files.uploadedBy', 'fullName email')
+      .exec();
+
+    for (const file of files) {
+      await this.activityLogsService.log({
+        entityType: 'REQUEST',
+        entityId: requestId,
+        action: 'file_uploaded',
+        message: `File uploaded: ${file.originalname}`,
+        userId,
+      });
+    }
+
+    this.socketGateway.emitToAll('requestFilesAdded', {
+      requestId,
+      files: filesToAdd,
+    });
+
+    return updatedRequest!;
+  }
+
+  async getFiles(requestId: string): Promise<RequestFile[]> {
+    const request = await this.requestModel
+      .findById(requestId)
+      .populate('files.uploadedBy', 'fullName email')
+      .exec();
+
+    if (!request) {
+      throw new NotFoundException(`Request with ID ${requestId} not found`);
+    }
+
+    return request.files;
+  }
+
+  async getFile(requestId: string, fileId: string) {
+    const request = await this.requestModel.findById(requestId).exec();
+    if (!request) {
+      throw new NotFoundException(`Request with ID ${requestId} not found`);
+    }
+
+    const file = request.files.find((f: any) => f._id.toString() === fileId);
+    if (!file) {
+      throw new NotFoundException(`File with ID ${fileId} not found`);
+    }
+
+    if (!file.path || !fs.existsSync(file.path)) {
+      throw new NotFoundException('File not found on disk');
+    }
+
+    return {
+      filename: file.filename,
+      originalName: file.originalName,
+      path: file.path,
+      mimetype: file.mimetype,
+      size: file.size,
+    };
+  }
+
+  async removeFile(requestId: string, fileId: string, userId: string): Promise<Request> {
+    const request = await this.requestModel.findById(requestId).exec();
+    if (!request) {
+      throw new NotFoundException(`Request with ID ${requestId} not found`);
+    }
+
+    const file = request.files.find((f: any) => f._id.toString() === fileId);
+    if (!file) {
+      throw new NotFoundException(`File with ID ${fileId} not found`);
+    }
+
+    // Delete file from disk
+    if (file.path && fs.existsSync(file.path)) {
+      fs.unlinkSync(file.path);
+    }
+
+    const updatedRequest = await this.requestModel
+      .findByIdAndUpdate(
+        requestId,
+        { $pull: { files: { _id: fileId } } },
+        { new: true },
+      )
+      .populate('clientId', 'name company phone email')
+      .populate('assignedTo', 'fullName email')
+      .populate('createdBy', 'fullName email')
+      .populate('files.uploadedBy', 'fullName email')
+      .exec();
+
+    await this.activityLogsService.log({
+      entityType: 'REQUEST',
+      entityId: requestId,
+      action: 'deleted',
+      message: `File deleted: ${file.originalName}`,
+      userId,
+    });
+
+    this.socketGateway.emitToAll('requestFileDeleted', {
+      requestId,
+      fileId,
+      filename: file.originalName,
+    });
+
+    return updatedRequest!;
   }
 
   async remove(id: string): Promise<void> {

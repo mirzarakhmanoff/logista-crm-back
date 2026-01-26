@@ -1,6 +1,16 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 
+export interface RequestFile {
+  filename: string;
+  originalName: string;
+  path: string;
+  mimetype: string;
+  size: number;
+  uploadedAt: Date;
+  uploadedBy: Types.ObjectId;
+}
+
 export enum RequestType {
   NEW_CLIENT = 'NEW_CLIENT',
   OUR_CLIENT = 'OUR_CLIENT',
@@ -117,6 +127,22 @@ export class Request extends Document {
 
   @Prop({ default: 0 })
   position: number;
+
+  @Prop({
+    type: [
+      {
+        filename: String,
+        originalName: String,
+        path: String,
+        mimetype: String,
+        size: Number,
+        uploadedAt: Date,
+        uploadedBy: { type: Types.ObjectId, ref: 'User' },
+      },
+    ],
+    default: [],
+  })
+  files: RequestFile[];
 
   createdAt?: Date;
   updatedAt?: Date;
