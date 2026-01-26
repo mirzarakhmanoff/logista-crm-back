@@ -1,8 +1,9 @@
-import { IsString, IsNumber, IsOptional } from 'class-validator';
+import { IsEnum, IsNumber, IsOptional } from 'class-validator';
+import { RequestStatusKey } from '../schemas/request.schema';
 
 export class MoveRequestDto {
-  @IsString()
-  toStatusKey: string;
+  @IsEnum(RequestStatusKey)
+  toStatusKey: RequestStatusKey;
 
   @IsOptional()
   @IsNumber()

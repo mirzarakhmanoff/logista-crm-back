@@ -17,7 +17,7 @@ import { UpdateRequestDto } from './dto/update-request.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
 import { FilterRequestDto } from './dto/filter-request.dto';
 import { MoveRequestDto } from './dto/move-request.dto';
-import { RequestType } from '../request-statuses/schemas/request-status.schema';
+import { RequestType } from './schemas/request.schema';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';

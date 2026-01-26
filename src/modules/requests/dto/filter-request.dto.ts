@@ -1,6 +1,6 @@
 import { IsOptional, IsString, IsEnum, IsNumber, Min, IsMongoId } from 'class-validator';
 import { Type } from 'class-transformer';
-import { RequestType } from '../../request-statuses/schemas/request-status.schema';
+import { RequestType, RequestStatusKey } from '../schemas/request.schema';
 
 export class FilterRequestDto {
   @IsOptional()
@@ -8,8 +8,8 @@ export class FilterRequestDto {
   type?: RequestType;
 
   @IsOptional()
-  @IsString()
-  statusKey?: string;
+  @IsEnum(RequestStatusKey)
+  statusKey?: RequestStatusKey;
 
   @IsOptional()
   @IsMongoId()

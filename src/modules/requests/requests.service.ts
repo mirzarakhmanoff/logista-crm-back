@@ -1,14 +1,18 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Request } from './schemas/request.schema';
+import {
+  Request,
+  RequestStatusKey,
+  RequestType,
+  REQUEST_STATUS_DEFINITIONS,
+  REQUEST_STATUS_TRANSITIONS,
+} from './schemas/request.schema';
 import { Client } from '../clients/schemas/client.schema';
 import { CreateRequestDto } from './dto/create-request.dto';
 import { UpdateRequestDto } from './dto/update-request.dto';
 import { FilterRequestDto } from './dto/filter-request.dto';
 import { MoveRequestDto } from './dto/move-request.dto';
-import { RequestStatusesService } from '../request-statuses/request-statuses.service';
-import { RequestType, RequestStatus } from '../request-statuses/schemas/request-status.schema';
 import { SocketGateway } from '../../socket/socket.gateway';
 import { ActivityLogsService } from '../activity-logs/activity-logs.service';
 
@@ -17,29 +21,92 @@ export class RequestsService {
   constructor(
     @InjectModel(Request.name) private requestModel: Model<Request>,
     @InjectModel(Client.name) private clientModel: Model<Client>,
-    private statusesService: RequestStatusesService,
     private socketGateway: SocketGateway,
     private activityLogsService: ActivityLogsService,
   ) {}
 
+  private getStatusDefinitions(type: RequestType) {
+    return REQUEST_STATUS_DEFINITIONS[type] ?? [];
+  }
+
+  private isValidStatus(type: RequestType, statusKey: RequestStatusKey): boolean {
+    return this.getStatusDefinitions(type).some(status => status.key === statusKey);
+  }
+
+  private isValidTransition(type: RequestType, fromKey: RequestStatusKey, toKey: RequestStatusKey): boolean {
+    const transitions = REQUEST_STATUS_TRANSITIONS[type] ?? {};
+    const allowed = transitions[fromKey] ?? [];
+    return allowed.includes(toKey);
+  }
+
+  private generateClientNumber() {
+    const timestamp = Date.now().toString(36);
+    const random = Math.random().toString(36).slice(2, 8);
+    return `CL-${timestamp}-${random}`;
+  }
+
   async create(createDto: CreateRequestDto, createdById: string): Promise<Request> {
-    const client = await this.clientModel.findById(createDto.clientId).exec();
-    if (!client) {
-      throw new NotFoundException(`Client with ID ${createDto.clientId} not found`);
+    let resolvedClientId = createDto.clientId;
+    const clientName = createDto.client?.trim();
+
+    if (!resolvedClientId && clientName) {
+      const newClient = new this.clientModel({
+        name: clientName,
+        clientNumber: this.generateClientNumber(),
+        createdBy: createdById,
+      });
+      const savedClient = await newClient.save();
+      resolvedClientId = savedClient._id.toString();
     }
 
-    const defaultStatusKey = await this.statusesService.getDefaultStatusKey(createDto.type);
+    if (!resolvedClientId) {
+      throw new BadRequestException('clientId or client is required');
+    }
+
+    const client = await this.clientModel.findById(resolvedClientId).exec();
+    if (!client) {
+      throw new NotFoundException(`Client with ID ${resolvedClientId} not found`);
+    }
+
+    let statusKey: RequestStatusKey = RequestStatusKey.NEW;
+    if (createDto.status) {
+      if (!this.isValidStatus(createDto.type, createDto.status)) {
+        throw new BadRequestException(`Invalid status key: ${createDto.status}`);
+      }
+      statusKey = createDto.status;
+    } else if (!this.isValidStatus(createDto.type, statusKey)) {
+      const fallback = this.getStatusDefinitions(createDto.type)[0];
+      if (fallback) {
+        statusKey = fallback.key;
+      }
+    }
 
     const maxPositionRequest = await this.requestModel
-      .findOne({ type: createDto.type, statusKey: defaultStatusKey })
+      .findOne({ type: createDto.type, statusKey })
       .sort({ position: -1 })
       .exec();
     const position = (maxPositionRequest?.position || 0) + 1;
 
+    const managerValue = createDto.manager?.trim();
+    const managerIsId = managerValue ? Types.ObjectId.isValid(managerValue) : false;
+
     const request = new this.requestModel({
-      ...createDto,
-      statusKey: defaultStatusKey,
+      clientId: resolvedClientId,
+      client: clientName,
+      type: createDto.type,
+      statusKey,
+      source: createDto.source,
+      comment: createDto.comment,
+      cargoName: createDto.cargoName,
+      route: createDto.route,
+      weight: createDto.weight,
+      volume: createDto.volume,
+      amount: createDto.amount,
+      deadline: createDto.deadline ? new Date(createDto.deadline) : undefined,
+      paymentStatus: createDto.paymentStatus,
       createdBy: createdById,
+      assignedTo: createDto.assignedTo ?? (managerIsId ? managerValue : undefined),
+      manager: managerIsId ? undefined : managerValue,
       position,
     });
 
@@ -81,7 +148,12 @@ export class RequestsService {
         })
         .select('_id')
         .exec();
-      query.clientId = { $in: clients.map(c => c._id) };
+      query.$or = [
+        { clientId: { $in: clients.map(c => c._id) } },
+        { client: { $regex: filterDto.search, $options: 'i' } },
+        { cargoName: { $regex: filterDto.search, $options: 'i' } },
+        { route: { $regex: filterDto.search, $options: 'i' } },
+      ];
     }
 
     const [data, total] = await Promise.all([
@@ -127,8 +199,23 @@ export class RequestsService {
   }
 
   async update(id: string, updateDto: UpdateRequestDto, userId: string): Promise<Request> {
+    const managerValue = updateDto.manager?.trim();
+    const managerIsId = managerValue ? Types.ObjectId.isValid(managerValue) : false;
+    const updateData: any = {
+      ...updateDto,
+    };
+
+    if (updateDto.deadline) {
+      updateData.deadline = new Date(updateDto.deadline);
+    }
+
+    if (managerValue) {
+      updateData.assignedTo = updateDto.assignedTo ?? (managerIsId ? managerValue : undefined);
+      updateData.manager = managerIsId ? undefined : managerValue;
+    }
+
     const request = await this.requestModel
-      .findByIdAndUpdate(id, updateDto, { new: true })
+      .findByIdAndUpdate(id, updateData, { new: true })
       .populate('clientId', 'name company phone email')
       .populate('assignedTo', 'fullName email')
       .populate('createdBy', 'fullName email')
@@ -151,15 +238,15 @@ export class RequestsService {
     return request;
   }
 
-  async updateStatus(id: string, toKey: string, userId: string): Promise<Request> {
+  async updateStatus(id: string, toKey: RequestStatusKey, userId: string): Promise<Request> {
     const request = await this.requestModel.findById(id).exec();
     if (!request) {
       throw new NotFoundException(`Request with ID ${id} not found`);
     }
 
-    const isValid = await this.statusesService.isValidTransition(
+    const isValid = this.isValidTransition(
       request.type as RequestType,
-      request.statusKey,
+      request.statusKey as RequestStatusKey,
       toKey,
     );
 
@@ -207,9 +294,9 @@ export class RequestsService {
     const isStatusChange = oldStatus !== moveDto.toStatusKey;
 
     if (isStatusChange) {
-      const isValid = await this.statusesService.isValidTransition(
+      const isValid = this.isValidTransition(
         request.type as RequestType,
-        request.statusKey,
+        request.statusKey as RequestStatusKey,
         moveDto.toStatusKey,
       );
 
@@ -246,7 +333,7 @@ export class RequestsService {
   }
 
   async getKanban(type: RequestType): Promise<any> {
-    const statuses = await this.statusesService.findAll(type);
+    const statuses = this.getStatusDefinitions(type);
 
     const requests = await this.requestModel
       .find({ type })
@@ -275,8 +362,16 @@ export class RequestsService {
           statusKey: request.statusKey,
           source: request.source,
           comment: request.comment,
-          client: request.clientId,
+          cargoName: request.cargoName,
+          route: request.route,
+          weight: request.weight,
+          volume: request.volume,
+          amount: request.amount,
+          deadline: request.deadline,
+          paymentStatus: request.paymentStatus,
+          client: request.clientId ?? request.client,
           assignedTo: request.assignedTo,
+          manager: request.manager,
           position: request.position,
           createdAt: request.createdAt,
           updatedAt: request.updatedAt,

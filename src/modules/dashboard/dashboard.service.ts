@@ -5,7 +5,7 @@ import { Request } from '../requests/schemas/request.schema';
 import { IssuedCode, CodeStatus } from '../issued-codes/schemas/issued-code.schema';
 import { Shipment, ShipmentStatus } from '../shipments/schemas/shipment.schema';
 import { Invoice, InvoiceStatus } from '../invoices/schemas/invoice.schema';
-import { RequestType } from '../request-statuses/schemas/request-status.schema';
+import { RequestType } from '../requests/schemas/request.schema';
 
 @Injectable()
 export class DashboardService {

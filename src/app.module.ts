@@ -9,7 +9,6 @@ import { UsersModule } from './modules/users/users.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { ClientsModule } from './modules/clients/clients.module';
 import { RequestsModule } from './modules/requests/requests.module';
-import { RequestStatusesModule } from './modules/request-statuses/request-statuses.module';
 import { RateQuotesModule } from './modules/rate-quotes/rate-quotes.module';
 import { IssuedCodesModule } from './modules/issued-codes/issued-codes.module';
 import { ShipmentsModule } from './modules/shipments/shipments.module';
@@ -38,7 +37,6 @@ import { RolesGuard } from './common/guards/roles.guard';
     DocumentsModule,
     ClientsModule,
     RequestsModule,
-    RequestStatusesModule,
     RateQuotesModule,
     IssuedCodesModule,
     ShipmentsModule,

@@ -1,6 +1,7 @@
-import { IsString } from 'class-validator';
+import { IsEnum } from 'class-validator';
+import { RequestStatusKey } from '../schemas/request.schema';
 
 export class UpdateStatusDto {
-  @IsString()
-  toKey: string;
+  @IsEnum(RequestStatusKey)
+  toKey: RequestStatusKey;
 }

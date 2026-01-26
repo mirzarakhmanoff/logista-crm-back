@@ -6,6 +6,9 @@ export class Client extends Document {
   @Prop({ required: true })
   name: string;
 
+  @Prop({ unique: true })
+  clientNumber?: string;
+
   @Prop()
   company?: string;
 

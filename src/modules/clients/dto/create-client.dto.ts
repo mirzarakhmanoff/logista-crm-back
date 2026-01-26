@@ -6,6 +6,10 @@ export class CreateClientDto {
 
   @IsOptional()
   @IsString()
+  clientNumber?: string;
+
+  @IsOptional()
+  @IsString()
   company?: string;
 
   @IsOptional()

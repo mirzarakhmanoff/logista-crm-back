@@ -14,9 +14,18 @@ export class ClientsService {
     private socketGateway: SocketGateway,
   ) {}
 
+  private generateClientNumber() {
+    const timestamp = Date.now().toString(36);
+    const random = Math.random().toString(36).slice(2, 8);
+    return `CL-${timestamp}-${random}`;
+  }
+
   async create(createClientDto: CreateClientDto, createdById: string): Promise<Client> {
+    const clientNumber = createClientDto.clientNumber?.trim() || this.generateClientNumber();
+
     const client = new this.clientModel({
       ...createClientDto,
+      clientNumber,
       createdBy: createdById,
     });
 
