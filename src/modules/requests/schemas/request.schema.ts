@@ -27,52 +27,68 @@ export enum RequestSource {
 
 export enum RequestStatusKey {
   NEW = 'new',
-  IN_WORK = 'in_work',
-  QUOTE_SENT = 'quote_sent',
-  NEGOTIATION = 'negotiation',
-  WON = 'won',
-  LOST = 'lost',
+  NEGOTIATIONS = 'negotiations',
+  CALCULATION = 'calculation',
+  DOCUMENTS = 'documents',
   LOADING = 'loading',
-  IN_TRANSIT = 'in_transit',
-  DELIVERED = 'delivered',
+  TRANSIT = 'transit',
+  DELIVERY = 'delivery',
   COMPLETED = 'completed',
-  CANCELLED = 'cancelled',
+  REJECTED = 'rejected',
 }
 
 export const REQUEST_STATUS_DEFINITIONS = {
   [RequestType.NEW_CLIENT]: [
     { key: RequestStatusKey.NEW, title: 'Yangi', order: 1, isFinal: false },
-    { key: RequestStatusKey.IN_WORK, title: 'Ishda', order: 2, isFinal: false },
-    { key: RequestStatusKey.QUOTE_SENT, title: 'Taklif yuborildi', order: 3, isFinal: false },
-    { key: RequestStatusKey.NEGOTIATION, title: 'Muzokaralar', order: 4, isFinal: false },
-    { key: RequestStatusKey.WON, title: 'Yutildi', order: 5, isFinal: true },
-    { key: RequestStatusKey.LOST, title: "Yo'qotildi", order: 6, isFinal: true },
+    { key: RequestStatusKey.NEGOTIATIONS, title: 'Muzokaralar', order: 2, isFinal: false },
+    { key: RequestStatusKey.CALCULATION, title: 'Hisoblash', order: 3, isFinal: false },
+    { key: RequestStatusKey.DOCUMENTS, title: 'Hujjatlar', order: 4, isFinal: false },
+    { key: RequestStatusKey.LOADING, title: 'Yuklash', order: 5, isFinal: false },
+    { key: RequestStatusKey.TRANSIT, title: "Yo'lda", order: 6, isFinal: false },
+    { key: RequestStatusKey.DELIVERY, title: 'Yetkazish', order: 7, isFinal: false },
+    { key: RequestStatusKey.COMPLETED, title: 'Tugallandi', order: 8, isFinal: true },
+    { key: RequestStatusKey.REJECTED, title: 'Rad etildi', order: 9, isFinal: true },
   ],
   [RequestType.OUR_CLIENT]: [
     { key: RequestStatusKey.NEW, title: 'Yangi', order: 1, isFinal: false },
-    { key: RequestStatusKey.IN_WORK, title: 'Ishda', order: 2, isFinal: false },
-    { key: RequestStatusKey.LOADING, title: 'Yuklash', order: 3, isFinal: false },
-    { key: RequestStatusKey.IN_TRANSIT, title: "Yo'lda", order: 4, isFinal: false },
-    { key: RequestStatusKey.DELIVERED, title: 'Yetkazildi', order: 5, isFinal: false },
-    { key: RequestStatusKey.COMPLETED, title: 'Tugallandi', order: 6, isFinal: true },
-    { key: RequestStatusKey.CANCELLED, title: 'Bekor qilindi', order: 7, isFinal: true },
+    { key: RequestStatusKey.NEGOTIATIONS, title: 'Muzokaralar', order: 2, isFinal: false },
+    { key: RequestStatusKey.CALCULATION, title: 'Hisoblash', order: 3, isFinal: false },
+    { key: RequestStatusKey.DOCUMENTS, title: 'Hujjatlar', order: 4, isFinal: false },
+    { key: RequestStatusKey.LOADING, title: 'Yuklash', order: 5, isFinal: false },
+    { key: RequestStatusKey.TRANSIT, title: "Yo'lda", order: 6, isFinal: false },
+    { key: RequestStatusKey.DELIVERY, title: 'Yetkazish', order: 7, isFinal: false },
+    { key: RequestStatusKey.COMPLETED, title: 'Tugallandi', order: 8, isFinal: true },
+    { key: RequestStatusKey.REJECTED, title: 'Rad etildi', order: 9, isFinal: true },
   ],
 } as const;
 
+// Barcha statuslar (COMPLETED va REJECTED dan tashqari) - erkin o'tish mumkin
+const ALL_ACTIVE_STATUSES = [
+  RequestStatusKey.NEW,
+  RequestStatusKey.NEGOTIATIONS,
+  RequestStatusKey.CALCULATION,
+  RequestStatusKey.DOCUMENTS,
+  RequestStatusKey.LOADING,
+  RequestStatusKey.TRANSIT,
+  RequestStatusKey.DELIVERY,
+];
+
+// Har qanday aktiv statusdan boshqa har qanday statusga o'tish mumkin
+const createFlexibleTransitions = () => {
+  const transitions: Record<string, RequestStatusKey[]> = {};
+  for (const status of ALL_ACTIVE_STATUSES) {
+    transitions[status] = [
+      ...ALL_ACTIVE_STATUSES.filter(s => s !== status),
+      RequestStatusKey.COMPLETED,
+      RequestStatusKey.REJECTED,
+    ];
+  }
+  return transitions;
+};
+
 export const REQUEST_STATUS_TRANSITIONS = {
-  [RequestType.NEW_CLIENT]: {
-    [RequestStatusKey.NEW]: [RequestStatusKey.IN_WORK],
-    [RequestStatusKey.IN_WORK]: [RequestStatusKey.QUOTE_SENT, RequestStatusKey.LOST],
-    [RequestStatusKey.QUOTE_SENT]: [RequestStatusKey.NEGOTIATION, RequestStatusKey.LOST],
-    [RequestStatusKey.NEGOTIATION]: [RequestStatusKey.WON, RequestStatusKey.LOST],
-  },
-  [RequestType.OUR_CLIENT]: {
-    [RequestStatusKey.NEW]: [RequestStatusKey.IN_WORK],
-    [RequestStatusKey.IN_WORK]: [RequestStatusKey.LOADING, RequestStatusKey.CANCELLED],
-    [RequestStatusKey.LOADING]: [RequestStatusKey.IN_TRANSIT, RequestStatusKey.CANCELLED],
-    [RequestStatusKey.IN_TRANSIT]: [RequestStatusKey.DELIVERED],
-    [RequestStatusKey.DELIVERED]: [RequestStatusKey.COMPLETED],
-  },
+  [RequestType.NEW_CLIENT]: createFlexibleTransitions(),
+  [RequestType.OUR_CLIENT]: createFlexibleTransitions(),
 } as const;
 
 @Schema({ timestamps: true, collection: 'requests' })
