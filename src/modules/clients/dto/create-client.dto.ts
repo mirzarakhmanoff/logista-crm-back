@@ -1,8 +1,13 @@
-import { IsString, IsOptional, IsEmail } from 'class-validator';
+import { IsString, IsOptional, IsEmail, IsEnum } from 'class-validator';
+import { ClientType } from '../schemas/client.schema';
 
 export class CreateClientDto {
   @IsString()
   name: string;
+
+  @IsOptional()
+  @IsEnum(ClientType)
+  type?: ClientType;
 
   @IsOptional()
   @IsString()

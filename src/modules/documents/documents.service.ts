@@ -351,7 +351,7 @@ export class DocumentsService {
       throw new NotFoundException(`Document with ID ${documentId} not found`);
     }
 
-    await this.activityLogsService.log({
+    const comment = await this.activityLogsService.log({
       entityType: 'DOCUMENT',
       entityId: documentId,
       action: 'comment',
@@ -362,6 +362,13 @@ export class DocumentsService {
       },
     });
 
-    return this.activityLogsService.findByEntity('DOCUMENT', documentId);
+    const populatedComment = await comment.populate('userId', 'fullName email avatar');
+
+    this.socketGateway.emitToAll('documentCommentAdded', {
+      documentId,
+      comment: populatedComment,
+    });
+
+    return populatedComment;
   }
 }

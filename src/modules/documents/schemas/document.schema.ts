@@ -12,6 +12,7 @@ export enum DocumentStatus {
 }
 
 export enum DocumentType {
+
   INCOMING = 'incoming',
   OUTGOING = 'outgoing',
 }

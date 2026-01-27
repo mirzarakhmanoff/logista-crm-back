@@ -20,6 +20,8 @@ export class DashboardService {
     const [
       newClientsCount,
       ourClientsCount,
+      newAgentsCount,
+      ourAgentsCount,
       inWorkCount,
       activeCodesCount,
       shipmentsInTransitCount,
@@ -27,6 +29,8 @@ export class DashboardService {
     ] = await Promise.all([
       this.requestModel.countDocuments({ type: RequestType.NEW_CLIENT }),
       this.requestModel.countDocuments({ type: RequestType.OUR_CLIENT }),
+      this.requestModel.countDocuments({ type: RequestType.NEW_AGENT }),
+      this.requestModel.countDocuments({ type: RequestType.OUR_AGENT }),
       this.requestModel.countDocuments({ statusKey: 'in_work' }),
       this.issuedCodeModel.countDocuments({ status: CodeStatus.ACTIVE }),
       this.shipmentModel.countDocuments({ status: ShipmentStatus.IN_TRANSIT }),
@@ -38,6 +42,8 @@ export class DashboardService {
     return {
       newClients: newClientsCount,
       ourClients: ourClientsCount,
+      newAgents: newAgentsCount,
+      ourAgents: ourAgentsCount,
       inWork: inWorkCount,
       activeCodes: activeCodesCount,
       shipmentsInTransit: shipmentsInTransitCount,
@@ -56,12 +62,30 @@ export class DashboardService {
       { $group: { _id: '$statusKey', count: { $sum: 1 } } },
     ]);
 
+    const newAgentStats = await this.requestModel.aggregate([
+      { $match: { type: RequestType.NEW_AGENT } },
+      { $group: { _id: '$statusKey', count: { $sum: 1 } } },
+    ]);
+
+    const ourAgentStats = await this.requestModel.aggregate([
+      { $match: { type: RequestType.OUR_AGENT } },
+      { $group: { _id: '$statusKey', count: { $sum: 1 } } },
+    ]);
+
     return {
       newClient: newClientStats.reduce((acc, item) => {
         acc[item._id] = item.count;
         return acc;
       }, {}),
       ourClient: ourClientStats.reduce((acc, item) => {
+        acc[item._id] = item.count;
+        return acc;
+      }, {}),
+      newAgent: newAgentStats.reduce((acc, item) => {
+        acc[item._id] = item.count;
+        return acc;
+      }, {}),
+      ourAgent: ourAgentStats.reduce((acc, item) => {
         acc[item._id] = item.count;
         return acc;
       }, {}),

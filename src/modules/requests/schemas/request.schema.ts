@@ -14,6 +14,8 @@ export interface RequestFile {
 export enum RequestType {
   NEW_CLIENT = 'NEW_CLIENT',
   OUR_CLIENT = 'OUR_CLIENT',
+  NEW_AGENT = 'NEW_AGENT',
+  OUR_AGENT = 'OUR_AGENT',
 }
 
 export enum RequestSource {
@@ -60,6 +62,28 @@ export const REQUEST_STATUS_DEFINITIONS = {
     { key: RequestStatusKey.COMPLETED, title: 'Tugallandi', order: 8, isFinal: true },
     { key: RequestStatusKey.REJECTED, title: 'Rad etildi', order: 9, isFinal: true },
   ],
+  [RequestType.NEW_AGENT]: [
+    { key: RequestStatusKey.NEW, title: 'Yangi', order: 1, isFinal: false },
+    { key: RequestStatusKey.NEGOTIATIONS, title: 'Muzokaralar', order: 2, isFinal: false },
+    { key: RequestStatusKey.CALCULATION, title: 'Hisoblash', order: 3, isFinal: false },
+    { key: RequestStatusKey.DOCUMENTS, title: 'Hujjatlar', order: 4, isFinal: false },
+    { key: RequestStatusKey.LOADING, title: 'Yuklash', order: 5, isFinal: false },
+    { key: RequestStatusKey.TRANSIT, title: "Yo'lda", order: 6, isFinal: false },
+    { key: RequestStatusKey.DELIVERY, title: 'Yetkazish', order: 7, isFinal: false },
+    { key: RequestStatusKey.COMPLETED, title: 'Tugallandi', order: 8, isFinal: true },
+    { key: RequestStatusKey.REJECTED, title: 'Rad etildi', order: 9, isFinal: true },
+  ],
+  [RequestType.OUR_AGENT]: [
+    { key: RequestStatusKey.NEW, title: 'Yangi', order: 1, isFinal: false },
+    { key: RequestStatusKey.NEGOTIATIONS, title: 'Muzokaralar', order: 2, isFinal: false },
+    { key: RequestStatusKey.CALCULATION, title: 'Hisoblash', order: 3, isFinal: false },
+    { key: RequestStatusKey.DOCUMENTS, title: 'Hujjatlar', order: 4, isFinal: false },
+    { key: RequestStatusKey.LOADING, title: 'Yuklash', order: 5, isFinal: false },
+    { key: RequestStatusKey.TRANSIT, title: "Yo'lda", order: 6, isFinal: false },
+    { key: RequestStatusKey.DELIVERY, title: 'Yetkazish', order: 7, isFinal: false },
+    { key: RequestStatusKey.COMPLETED, title: 'Tugallandi', order: 8, isFinal: true },
+    { key: RequestStatusKey.REJECTED, title: 'Rad etildi', order: 9, isFinal: true },
+  ],
 } as const;
 
 // Barcha statuslar (COMPLETED va REJECTED dan tashqari) - erkin o'tish mumkin
@@ -89,6 +113,8 @@ const createFlexibleTransitions = () => {
 export const REQUEST_STATUS_TRANSITIONS = {
   [RequestType.NEW_CLIENT]: createFlexibleTransitions(),
   [RequestType.OUR_CLIENT]: createFlexibleTransitions(),
+  [RequestType.NEW_AGENT]: createFlexibleTransitions(),
+  [RequestType.OUR_AGENT]: createFlexibleTransitions(),
 } as const;
 
 @Schema({ timestamps: true, collection: 'requests' })

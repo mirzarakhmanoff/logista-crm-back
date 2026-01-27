@@ -10,7 +10,7 @@ import {
   REQUEST_STATUS_TRANSITIONS,
   RequestFile,
 } from './schemas/request.schema';
-import { Client } from '../clients/schemas/client.schema';
+import { Client, ClientType } from '../clients/schemas/client.schema';
 import { CreateRequestDto } from './dto/create-request.dto';
 import { UpdateRequestDto } from './dto/update-request.dto';
 import { FilterRequestDto } from './dto/filter-request.dto';
@@ -43,10 +43,18 @@ export class RequestsService {
     return allowed.includes(toKey);
   }
 
-  private generateClientNumber() {
+  private getClientTypeForRequestType(type: RequestType): ClientType {
+    if (type === RequestType.NEW_AGENT || type === RequestType.OUR_AGENT) {
+      return ClientType.AGENT;
+    }
+    return ClientType.CLIENT;
+  }
+
+  private generateClientNumber(clientType: ClientType = ClientType.CLIENT) {
     const timestamp = Date.now().toString(36);
     const random = Math.random().toString(36).slice(2, 8);
-    return `CL-${timestamp}-${random}`;
+    const prefix = clientType === ClientType.AGENT ? 'AG' : 'CL';
+    return `${prefix}-${timestamp}-${random}`;
   }
 
   async create(createDto: CreateRequestDto, createdById: string): Promise<Request> {
@@ -54,9 +62,11 @@ export class RequestsService {
     const clientName = createDto.client?.trim();
 
     if (!resolvedClientId && clientName) {
+      const clientType = this.getClientTypeForRequestType(createDto.type);
       const newClient = new this.clientModel({
         name: clientName,
-        clientNumber: this.generateClientNumber(),
+        clientNumber: this.generateClientNumber(clientType),
+        type: clientType,
         createdBy: createdById,
       });
       const savedClient = await newClient.save();

@@ -15,6 +15,7 @@ import { ClientsService } from './clients.service';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { FilterClientDto } from './dto/filter-client.dto';
+import { ClientType } from './schemas/client.schema';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -41,6 +42,11 @@ export class ClientsController {
   @Get()
   async findAll(@Query() filterDto: FilterClientDto) {
     return this.clientsService.findAll(filterDto);
+  }
+
+  @Get('agents')
+  async findAllAgents(@Query() filterDto: FilterClientDto) {
+    return this.clientsService.findAll({ ...filterDto, type: ClientType.AGENT });
   }
 
   @Get(':id')

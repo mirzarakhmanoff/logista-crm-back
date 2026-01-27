@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Client } from './schemas/client.schema';
+import { Client, ClientType } from './schemas/client.schema';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { FilterClientDto } from './dto/filter-client.dto';
@@ -14,14 +14,16 @@ export class ClientsService {
     private socketGateway: SocketGateway,
   ) {}
 
-  private generateClientNumber() {
+  private generateClientNumber(type: ClientType = ClientType.CLIENT) {
     const timestamp = Date.now().toString(36);
     const random = Math.random().toString(36).slice(2, 8);
-    return `CL-${timestamp}-${random}`;
+    const prefix = type === ClientType.AGENT ? 'AG' : 'CL';
+    return `${prefix}-${timestamp}-${random}`;
   }
 
   async create(createClientDto: CreateClientDto, createdById: string): Promise<Client> {
-    const clientNumber = createClientDto.clientNumber?.trim() || this.generateClientNumber();
+    const clientType = createClientDto.type || ClientType.CLIENT;
+    const clientNumber = createClientDto.clientNumber?.trim() || this.generateClientNumber(clientType);
 
     const client = new this.clientModel({
       ...createClientDto,
@@ -50,6 +52,10 @@ export class ClientsService {
     const page = filterDto.page || 1;
     const limit = filterDto.limit || 20;
     const skip = (page - 1) * limit;
+
+    if (filterDto.type) {
+      query.type = filterDto.type;
+    }
 
     if (filterDto.search) {
       query.$or = [

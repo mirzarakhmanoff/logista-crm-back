@@ -1,10 +1,15 @@
-import { IsOptional, IsString, IsNumber, Min } from 'class-validator';
+import { IsOptional, IsString, IsNumber, Min, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ClientType } from '../schemas/client.schema';
 
 export class FilterClientDto {
   @IsOptional()
   @IsString()
   search?: string;
+
+  @IsOptional()
+  @IsEnum(ClientType)
+  type?: ClientType;
 
   @IsOptional()
   @Type(() => Number)
