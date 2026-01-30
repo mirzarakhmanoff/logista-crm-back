@@ -9,6 +9,7 @@ export enum EntityType {
   RATE_QUOTE = 'RATE_QUOTE',
   ISSUED_CODE = 'ISSUED_CODE',
   DOCUMENT = 'DOCUMENT',
+  EMAIL = 'EMAIL',
 }
 
 export enum ActionType {
@@ -18,6 +19,9 @@ export enum ActionType {
   FILE_UPLOADED = 'file_uploaded',
   COMMENT = 'comment',
   DELETED = 'deleted',
+  EMAIL_SENT = 'email_sent',
+  EMAIL_RECEIVED = 'email_received',
+  EMAIL_LINKED = 'email_linked',
 }
 
 @Schema({ timestamps: true, collection: 'activity_logs' })

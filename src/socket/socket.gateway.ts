@@ -110,4 +110,91 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.emitToAll('documentDeleted', { documentId });
     this.logger.log(`Document deleted: ${documentId}`);
   }
+
+  // ==================== EMAIL EVENTS ====================
+
+  // Yangi email kelganda
+  emitNewEmailReceived(data: {
+    accountId: string;
+    accountName: string;
+    messageId: string;
+    from: string;
+    subject: string;
+    date: Date;
+  }) {
+    this.emitToAll('newEmailReceived', data);
+    this.logger.log(`New email received: ${data.subject} from ${data.from}`);
+  }
+
+  // Bir nechta yangi email kelganda (sync natijasi)
+  emitNewEmailsReceived(data: {
+    accountId: string;
+    accountName: string;
+    count: number;
+  }) {
+    this.emitToAll('newEmailsReceived', data);
+    this.logger.log(
+      `${data.count} new emails received for account ${data.accountName}`,
+    );
+  }
+
+  // Email jo'natilganda
+  emitEmailSent(data: {
+    messageId: string;
+    to: string[];
+    subject: string;
+  }) {
+    this.emitToAll('emailSent', data);
+    this.logger.log(`Email sent: ${data.subject}`);
+  }
+
+  // Email CRM obyektiga bog'langanda
+  emitEmailLinked(data: {
+    messageId: string;
+    entityType: string;
+    entityId: string;
+  }) {
+    this.emitToAll('emailLinked', data);
+    this.logger.log(
+      `Email ${data.messageId} linked to ${data.entityType}:${data.entityId}`,
+    );
+  }
+
+  // Email sync xatolik
+  emitEmailSyncError(data: {
+    accountId: string;
+    accountName: string;
+    error: string;
+  }) {
+    this.emitToAll('emailSyncError', data);
+    this.logger.warn(
+      `Email sync error for ${data.accountName}: ${data.error}`,
+    );
+  }
+
+  // Email akkauntga subscribe bo'lish
+  @SubscribeMessage('joinEmailAccount')
+  handleJoinEmailAccount(
+    @MessageBody() accountId: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    client.join(`email-account-${accountId}`);
+    this.logger.log(
+      `Client ${client.id} joined email-account-${accountId}`,
+    );
+    return { event: 'joinedEmailAccount', data: accountId };
+  }
+
+  // Email akkauntdan unsubscribe bo'lish
+  @SubscribeMessage('leaveEmailAccount')
+  handleLeaveEmailAccount(
+    @MessageBody() accountId: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    client.leave(`email-account-${accountId}`);
+    this.logger.log(
+      `Client ${client.id} left email-account-${accountId}`,
+    );
+    return { event: 'leftEmailAccount', data: accountId };
+  }
 }

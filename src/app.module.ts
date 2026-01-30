@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -15,6 +16,7 @@ import { ShipmentsModule } from './modules/shipments/shipments.module';
 import { InvoicesModule } from './modules/invoices/invoices.module';
 import { ActivityLogsModule } from './modules/activity-logs/activity-logs.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { EmailModule } from './modules/email/email.module';
 import { SocketModule } from './socket/socket.module';
 import { getDatabaseConfig } from './config/database.config';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -31,6 +33,7 @@ import { RolesGuard } from './common/guards/roles.guard';
       useFactory: getDatabaseConfig,
       inject: [ConfigService],
     }),
+    ScheduleModule.forRoot(),
     SocketModule,
     AuthModule,
     UsersModule,
@@ -43,6 +46,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     InvoicesModule,
     ActivityLogsModule,
     DashboardModule,
+    EmailModule,
   ],
   controllers: [AppController],
   providers: [
