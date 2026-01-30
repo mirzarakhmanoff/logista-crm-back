@@ -32,6 +32,9 @@ export class Client extends Document {
   @Prop()
   address?: string;
 
+  @Prop()
+  avatar?: string;
+
   @Prop({ type: Types.ObjectId, ref: 'User' })
   createdBy?: Types.ObjectId;
 }

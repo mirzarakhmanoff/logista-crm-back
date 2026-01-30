@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import * as fs from 'fs';
+import * as path from 'path';
 import { Client, ClientType } from './schemas/client.schema';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
@@ -108,12 +110,79 @@ export class ClientsService {
     return client;
   }
 
-  async remove(id: string): Promise<void> {
-    const result = await this.clientModel.findByIdAndDelete(id).exec();
-
-    if (!result) {
+  async updateAvatar(id: string, filePath: string): Promise<Client> {
+    const client = await this.clientModel.findById(id).exec();
+    if (!client) {
       throw new NotFoundException(`Client with ID ${id} not found`);
     }
+
+    // Delete old avatar file if exists
+    if (client.avatar) {
+      const oldPath = client.avatar.replace(/\//g, path.sep);
+      if (fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath);
+      }
+    }
+
+    const avatarUrl = filePath.replace(/\\/g, '/');
+
+    const updatedClient = await this.clientModel
+      .findByIdAndUpdate(id, { avatar: avatarUrl }, { new: true })
+      .populate('createdBy', 'fullName email')
+      .exec();
+
+    if (!updatedClient) {
+      throw new NotFoundException(`Client with ID ${id} not found`);
+    }
+
+    this.socketGateway.emitToAll('clientUpdated', updatedClient);
+
+    return updatedClient;
+  }
+
+  async removeAvatar(id: string): Promise<Client> {
+    const client = await this.clientModel.findById(id).exec();
+    if (!client) {
+      throw new NotFoundException(`Client with ID ${id} not found`);
+    }
+
+    if (client.avatar) {
+      const oldPath = client.avatar.replace(/\//g, path.sep);
+      if (fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath);
+      }
+    }
+
+    const updatedClient = await this.clientModel
+      .findByIdAndUpdate(id, { $unset: { avatar: '' } }, { new: true })
+      .populate('createdBy', 'fullName email')
+      .exec();
+
+    if (!updatedClient) {
+      throw new NotFoundException(`Client with ID ${id} not found`);
+    }
+
+    this.socketGateway.emitToAll('clientUpdated', updatedClient);
+
+    return updatedClient;
+  }
+
+  async remove(id: string): Promise<void> {
+    const client = await this.clientModel.findById(id).exec();
+
+    if (!client) {
+      throw new NotFoundException(`Client with ID ${id} not found`);
+    }
+
+    // Delete avatar file if exists
+    if (client.avatar) {
+      const avatarPath = client.avatar.replace(/\//g, path.sep);
+      if (fs.existsSync(avatarPath)) {
+        fs.unlinkSync(avatarPath);
+      }
+    }
+
+    await this.clientModel.findByIdAndDelete(id).exec();
 
     this.socketGateway.emitToAll('clientDeleted', { clientId: id });
   }
