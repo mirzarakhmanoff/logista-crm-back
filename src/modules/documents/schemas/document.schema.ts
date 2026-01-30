@@ -96,12 +96,19 @@ DocumentSchema.pre('validate', async function () {
   if (!this.documentNumber) {
     const year = new Date().getFullYear();
     const Model = this.constructor as any;
-    const count = await Model.countDocuments({
-      createdAt: {
-        $gte: new Date(year, 0, 1),
-        $lt: new Date(year + 1, 0, 1),
-      },
-    });
-    this.documentNumber = `DOC-${year}-${String(count + 1).padStart(3, '0')}`;
+    const prefix = `DOC-${year}-`;
+
+    const lastDoc = await Model.findOne(
+      { documentNumber: { $regex: `^${prefix}` } },
+      { documentNumber: 1 },
+    ).sort({ documentNumber: -1 });
+
+    let nextNumber = 1;
+    if (lastDoc) {
+      const lastNumber = parseInt(lastDoc.documentNumber.replace(prefix, ''), 10);
+      nextNumber = lastNumber + 1;
+    }
+
+    this.documentNumber = `${prefix}${String(nextNumber).padStart(3, '0')}`;
   }
 });

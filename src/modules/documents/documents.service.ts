@@ -25,12 +25,24 @@ export class DocumentsService {
     createDocumentDto: CreateDocumentDto,
     createdById: string,
   ): Promise<Document> {
-    const document = new this.documentModel({
-      ...createDocumentDto,
-      createdBy: createdById,
-    });
+    let savedDocument!: Document;
+    const maxRetries = 3;
 
-    const savedDocument = await document.save();
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const document = new this.documentModel({
+          ...createDocumentDto,
+          createdBy: createdById,
+        });
+        savedDocument = await document.save();
+        break;
+      } catch (error: any) {
+        if (error.code === 11000 && attempt < maxRetries - 1) {
+          continue;
+        }
+        throw error;
+      }
+    }
 
     const populatedDocument = await this.documentModel
       .findById(savedDocument._id)
