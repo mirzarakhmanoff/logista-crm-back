@@ -43,8 +43,8 @@ export class ClientsController {
   }
 
   @Get()
-  async findAll(@Query() filterDto: FilterClientDto) {
-    return this.clientsService.findAll(filterDto);
+  async findAllClients(@Query() filterDto: FilterClientDto) {
+    return this.clientsService.findAll({ ...filterDto, type: ClientType.CLIENT });
   }
 
   @Get('agents')
