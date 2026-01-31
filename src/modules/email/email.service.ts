@@ -4,6 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { EmailAccount } from './schemas/email-account.schema';
@@ -41,7 +42,12 @@ export class EmailService {
     private emailOAuthService: EmailOAuthService,
     private emailSyncService: EmailSyncService,
     private socketGateway: SocketGateway,
+    private configService: ConfigService,
   ) {}
+
+  getFrontendUrl(): string {
+    return this.configService.get<string>('CORS_ORIGIN', 'http://localhost:3001');
+  }
 
   // ==================== ACCOUNT MANAGEMENT ====================
 
@@ -122,11 +128,12 @@ export class EmailService {
   }
 
   async findAllAccounts(userId: string): Promise<EmailAccount[]> {
+    const userObjectId = new Types.ObjectId(userId);
     return this.accountModel
       .find({
         $or: [
-          { createdBy: userId },
-          { sharedWith: userId },
+          { createdBy: userObjectId },
+          { sharedWith: userObjectId },
         ],
       })
       .populate('createdBy', 'fullName email')
@@ -179,7 +186,7 @@ export class EmailService {
 
   async testAccountConnection(
     accountId: string,
-  ): Promise<{ imap: boolean; smtp: boolean }> {
+  ) {
     const account = await this.accountModel
       .findById(accountId)
       .select('+credentials')
@@ -187,6 +194,24 @@ export class EmailService {
 
     if (!account) {
       throw new NotFoundException(`Email account ${accountId} topilmadi`);
+    }
+
+    // Refresh token if expired
+    if (
+      account.provider === EmailProvider.GMAIL &&
+      account.credentials?.refreshToken &&
+      account.credentials.tokenExpiry &&
+      this.emailOAuthService.isTokenExpired(account.credentials.tokenExpiry)
+    ) {
+      this.logger.log('Token expired, refreshing...');
+      const newToken = await this.emailOAuthService.refreshAccessToken(
+        account.credentials.refreshToken,
+      );
+      account.credentials.accessToken = newToken.accessToken;
+      await this.accountModel.findByIdAndUpdate(account._id, {
+        'credentials.accessToken': newToken.accessToken,
+        'credentials.tokenExpiry': newToken.expiry,
+      });
     }
 
     const imapConfig = this.emailImapService.buildImapConfig(
@@ -199,26 +224,25 @@ export class EmailService {
       account.imapConfig,
     );
 
-    const smtpConfig = this.emailSmtpService.buildSmtpConfig(
-      account.provider,
-      {
-        user: account.credentials.user,
-        password: account.credentials.password,
-        accessToken: account.credentials.accessToken,
-      },
-      account.smtpConfig,
-    );
+    const imapResult = await this.emailImapService.testConnection(imapConfig);
 
-    const [imap, smtp] = await Promise.all([
-      this.emailImapService.testConnection(imapConfig),
-      this.emailSmtpService.testConnection(smtpConfig),
-    ]);
-
-    return { imap, smtp };
+    return {
+      account: account.emailAddress,
+      provider: account.provider,
+      authMethod: account.credentials.accessToken ? 'XOAUTH2' : 'PASSWORD',
+      tokenExpiry: account.credentials.tokenExpiry,
+      imap: imapResult,
+    };
   }
 
   async triggerSync(accountId: string): Promise<EmailSyncResult> {
-    return this.emailSyncService.syncSingleAccount(accountId);
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new BadRequestException('Sync timeout: 60 sekunddan oshdi')), 60000),
+    );
+    return Promise.race([
+      this.emailSyncService.syncSingleAccount(accountId),
+      timeout,
+    ]);
   }
 
   // ==================== GMAIL OAUTH2 ====================
@@ -231,38 +255,61 @@ export class EmailService {
     code: string,
     userId: string,
   ): Promise<EmailAccount> {
-    const tokens = await this.emailOAuthService.getTokensFromCode(code);
-    const emailAddress = await this.emailOAuthService.getUserEmail(
-      tokens.accessToken,
-    );
+    try {
+      this.logger.log(`Gmail OAuth callback: userId=${userId}`);
 
-    const account = new this.accountModel({
-      name: `Gmail - ${emailAddress}`,
-      emailAddress,
-      provider: EmailProvider.GMAIL,
-      imapConfig: { host: 'imap.gmail.com', port: 993, secure: true },
-      smtpConfig: { host: 'smtp.gmail.com', port: 465, secure: true },
-      credentials: {
-        user: emailAddress,
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
-        tokenExpiry: tokens.expiry,
-      },
-      syncEnabled: true,
-      createdBy: userId,
-    });
+      const tokens = await this.emailOAuthService.getTokensFromCode(code);
+      this.logger.log(`Tokens received: accessToken=${!!tokens.accessToken}, refreshToken=${!!tokens.refreshToken}`);
 
-    const saved = await account.save();
-    this.logger.log(`Gmail account connected via OAuth2: ${emailAddress}`);
-
-    // Trigger initial sync
-    this.emailSyncService
-      .syncSingleAccount(saved._id.toString())
-      .catch((err) =>
-        this.logger.warn(`Initial sync failed: ${err.message}`),
+      const emailAddress = await this.emailOAuthService.getUserEmail(
+        tokens.accessToken,
       );
+      this.logger.log(`Gmail email resolved: ${emailAddress}`);
 
-    return this.accountModel.findById(saved._id).exec() as Promise<EmailAccount>;
+      const existing = await this.accountModel.findOne({ emailAddress }).exec();
+      if (existing) {
+        existing.credentials = {
+          user: emailAddress,
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+          tokenExpiry: tokens.expiry,
+        };
+        await existing.save();
+        this.logger.log(`Gmail account updated via OAuth2: ${emailAddress}`);
+        return existing;
+      }
+
+      const account = new this.accountModel({
+        name: `Gmail - ${emailAddress}`,
+        emailAddress,
+        provider: EmailProvider.GMAIL,
+        imapConfig: { host: 'imap.gmail.com', port: 993, secure: true },
+        smtpConfig: { host: 'smtp.gmail.com', port: 465, secure: true },
+        credentials: {
+          user: emailAddress,
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+          tokenExpiry: tokens.expiry,
+        },
+        syncEnabled: true,
+        createdBy: new Types.ObjectId(userId),
+      });
+
+      const saved = await account.save();
+      this.logger.log(`Gmail account connected via OAuth2: ${emailAddress}`);
+
+      // Trigger initial sync
+      this.emailSyncService
+        .syncSingleAccount(saved._id.toString())
+        .catch((err) =>
+          this.logger.warn(`Initial sync failed: ${err.message}`),
+        );
+
+      return this.accountModel.findById(saved._id).exec() as Promise<EmailAccount>;
+    } catch (error) {
+      this.logger.error(`Gmail OAuth callback failed: ${error.message}`, error.stack);
+      throw new BadRequestException(`Gmail OAuth failed: ${error.message}`);
+    }
   }
 
   // ==================== MESSAGES ====================

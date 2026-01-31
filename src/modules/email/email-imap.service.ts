@@ -14,29 +14,41 @@ import {
 export class EmailImapService {
   private logger = new Logger('EmailImapService');
 
-  async testConnection(config: ImapConnectionConfig): Promise<boolean> {
+  private buildAuth(config: ImapConnectionConfig) {
+    const auth: any = { user: config.auth.user };
+    if (config.auth.accessToken) {
+      auth.accessToken = config.auth.accessToken;
+    } else if (config.auth.pass) {
+      auth.pass = config.auth.pass;
+    }
+    return auth;
+  }
+
+  async testConnection(config: ImapConnectionConfig): Promise<{ success: boolean; error?: string; details?: string }> {
+    const auth = this.buildAuth(config);
+    this.logger.log(`IMAP test: host=${config.host}, port=${config.port}, user=${config.auth.user}, authMethod=${auth.accessToken ? 'XOAUTH2' : 'PASSWORD'}`);
+
     const client = new ImapFlow({
       host: config.host,
       port: config.port,
       secure: config.secure,
-      auth: {
-        user: config.auth.user,
-        pass: config.auth.pass,
-        accessToken: config.auth.accessToken,
-      },
+      auth,
       logger: false,
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
     });
 
     try {
       await client.connect();
+      const mailboxes = await client.list();
       await client.logout();
-      this.logger.log(`IMAP connection test successful for ${config.auth.user}`);
-      return true;
+      this.logger.log(`IMAP connection test successful for ${config.auth.user}, mailboxes: ${mailboxes.length}`);
+      return { success: true, details: `Connected. ${mailboxes.length} folders found.` };
     } catch (error) {
       this.logger.error(
         `IMAP connection test failed for ${config.auth.user}: ${error.message}`,
       );
-      return false;
+      return { success: false, error: error.message };
     }
   }
 
@@ -50,26 +62,43 @@ export class EmailImapService {
       host: config.host,
       port: config.port,
       secure: config.secure,
-      auth: {
-        user: config.auth.user,
-        pass: config.auth.pass,
-        accessToken: config.auth.accessToken,
-      },
+      auth: this.buildAuth(config),
       logger: false,
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
     });
 
     const messages: ParsedEmail[] = [];
 
     try {
       await client.connect();
+      this.logger.log(`IMAP connected to ${config.host}`);
 
       const lock = await client.getMailboxLock(folder);
       try {
-        const searchCriteria =
-          sinceUid > 0 ? { uid: `${sinceUid + 1}:*` } : { all: true };
+        this.logger.log(`Mailbox "${folder}" locked. Total messages: ${(client.mailbox as any)?.exists || 'unknown'}`);
+
+        // Birinchi sync uchun faqat oxirgi 20 ta xabarni olish
+        let searchCriteria: any;
+        const maxMessages = sinceUid > 0 ? 100 : 20;
+
+        if (sinceUid > 0) {
+          searchCriteria = { uid: `${sinceUid + 1}:*` };
+        } else {
+          // Oxirgi N ta xabarni olish uchun seq range ishlatamiz
+          const total = (client.mailbox as any)?.exists || 0;
+          if (total === 0) {
+            this.logger.log('Mailbox is empty');
+            lock.release();
+            await client.logout();
+            return [];
+          }
+          const start = Math.max(1, total - maxMessages + 1);
+          searchCriteria = { seq: `${start}:*` };
+          this.logger.log(`First sync: fetching messages ${start} to ${total}`);
+        }
 
         let count = 0;
-        const maxMessages = sinceUid > 0 ? 100 : 50;
 
         for await (const message of client.fetch(searchCriteria, {
           uid: true,
@@ -78,6 +107,7 @@ export class EmailImapService {
           source: true,
         })) {
           if (count >= maxMessages) break;
+          this.logger.log(`Fetching message ${count + 1}, UID: ${message.uid}`);
 
           try {
             const parsed = await simpleParser(message.source);
@@ -192,12 +222,9 @@ export class EmailImapService {
       host: config.host,
       port: config.port,
       secure: config.secure,
-      auth: {
-        user: config.auth.user,
-        pass: config.auth.pass,
-        accessToken: config.auth.accessToken,
-      },
+      auth: this.buildAuth(config),
       logger: false,
+      connectionTimeout: 15000,
     });
 
     try {

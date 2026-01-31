@@ -126,8 +126,15 @@ export class EmailController {
   async googleCallback(
     @Query('code') code: string,
     @Query('state') state: string,
+    @Res() res: Response,
   ) {
-    return this.emailService.handleGmailCallback(code, state);
+    const frontendUrl = this.emailService.getFrontendUrl();
+    try {
+      const account = await this.emailService.handleGmailCallback(code, state);
+      res.redirect(`${frontendUrl}/email?oauth=success&account=${account._id}`);
+    } catch (error) {
+      res.redirect(`${frontendUrl}/email?oauth=error&message=${encodeURIComponent(error.message)}`);
+    }
   }
 
   // ==================== MESSAGE ENDPOINTS ====================
