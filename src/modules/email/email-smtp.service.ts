@@ -90,6 +90,7 @@ export class EmailSmtpService {
     > = {
       gmail: { host: 'smtp.gmail.com', port: 465, secure: true },
       mailru: { host: 'smtp.mail.ru', port: 465, secure: true },
+      corporate: { host: 'mail.logistatrans.uz', port: 465, secure: true },
     };
 
     const config = customConfig || defaults[provider] || customConfig;
@@ -127,6 +128,7 @@ export class EmailSmtpService {
       port: config.port,
       secure: config.secure,
       auth: {} as Record<string, any>,
+      tls: { rejectUnauthorized: false },
     };
 
     if (config.auth.type === 'OAuth2') {

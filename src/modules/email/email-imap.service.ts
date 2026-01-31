@@ -24,19 +24,23 @@ export class EmailImapService {
     return auth;
   }
 
-  async testConnection(config: ImapConnectionConfig): Promise<{ success: boolean; error?: string; details?: string }> {
-    const auth = this.buildAuth(config);
-    this.logger.log(`IMAP test: host=${config.host}, port=${config.port}, user=${config.auth.user}, authMethod=${auth.accessToken ? 'XOAUTH2' : 'PASSWORD'}`);
-
-    const client = new ImapFlow({
+  private buildClientOptions(config: ImapConnectionConfig) {
+    return {
       host: config.host,
       port: config.port,
       secure: config.secure,
-      auth,
-      logger: false,
+      auth: this.buildAuth(config),
+      logger: false as const,
       connectionTimeout: 15000,
       greetingTimeout: 15000,
-    });
+      tls: { rejectUnauthorized: false },
+    };
+  }
+
+  async testConnection(config: ImapConnectionConfig): Promise<{ success: boolean; error?: string; details?: string }> {
+    this.logger.log(`IMAP test: host=${config.host}, port=${config.port}, user=${config.auth.user}, authMethod=${config.auth.accessToken ? 'XOAUTH2' : 'PASSWORD'}`);
+
+    const client = new ImapFlow(this.buildClientOptions(config));
 
     try {
       await client.connect();
@@ -58,15 +62,7 @@ export class EmailImapService {
     folder: string = 'INBOX',
     attachmentsDir?: string,
   ): Promise<ParsedEmail[]> {
-    const client = new ImapFlow({
-      host: config.host,
-      port: config.port,
-      secure: config.secure,
-      auth: this.buildAuth(config),
-      logger: false,
-      connectionTimeout: 15000,
-      greetingTimeout: 15000,
-    });
+    const client = new ImapFlow(this.buildClientOptions(config));
 
     const messages: ParsedEmail[] = [];
 
@@ -218,14 +214,7 @@ export class EmailImapService {
   }
 
   async fetchFolders(config: ImapConnectionConfig): Promise<string[]> {
-    const client = new ImapFlow({
-      host: config.host,
-      port: config.port,
-      secure: config.secure,
-      auth: this.buildAuth(config),
-      logger: false,
-      connectionTimeout: 15000,
-    });
+    const client = new ImapFlow(this.buildClientOptions(config));
 
     try {
       await client.connect();
@@ -253,6 +242,7 @@ export class EmailImapService {
     > = {
       gmail: { host: 'imap.gmail.com', port: 993, secure: true },
       mailru: { host: 'imap.mail.ru', port: 993, secure: true },
+      corporate: { host: 'mail.logistatrans.uz', port: 993, secure: true },
     };
 
     const config = customConfig || defaults[provider] || customConfig;

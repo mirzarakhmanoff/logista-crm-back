@@ -77,9 +77,9 @@ export class EmailService {
       ),
     );
 
-    if (!imapOk) {
+    if (!imapOk?.success) {
       throw new BadRequestException(
-        'IMAP ulanish muvaffaqiyatsiz. Login va parolni tekshiring.',
+        `IMAP ulanish muvaffaqiyatsiz: ${imapOk?.error || 'Login va parolni tekshiring.'}`,
       );
     }
 
@@ -951,6 +951,11 @@ export class EmailService {
         port: 993,
         secure: true,
       },
+      [EmailProvider.CORPORATE]: {
+        host: 'mail.logistatrans.uz',
+        port: 993,
+        secure: true,
+      },
     };
     return configs[provider];
   }
@@ -968,6 +973,11 @@ export class EmailService {
       },
       [EmailProvider.MAILRU]: {
         host: 'smtp.mail.ru',
+        port: 465,
+        secure: true,
+      },
+      [EmailProvider.CORPORATE]: {
+        host: 'mail.logistatrans.uz',
         port: 465,
         secure: true,
       },
