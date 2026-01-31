@@ -17,6 +17,7 @@ import { InvoicesModule } from './modules/invoices/invoices.module';
 import { ActivityLogsModule } from './modules/activity-logs/activity-logs.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { EmailModule } from './modules/email/email.module';
+import { ChatModule } from './modules/chat/chat.module';
 import { SocketModule } from './socket/socket.module';
 import { getDatabaseConfig } from './config/database.config';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -47,6 +48,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     ActivityLogsModule,
     DashboardModule,
     EmailModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [
