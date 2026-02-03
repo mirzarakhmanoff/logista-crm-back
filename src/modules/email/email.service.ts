@@ -108,7 +108,9 @@ export class EmailService {
       smtpConfig,
       credentials: dto.credentials,
       syncEnabled: dto.syncEnabled ?? true,
-      createdBy: userId,
+      createdBy: Types.ObjectId.isValid(userId)
+        ? new Types.ObjectId(userId)
+        : userId,
     });
 
     const saved = await account.save();
@@ -128,13 +130,9 @@ export class EmailService {
   }
 
   async findAllAccounts(userId: string): Promise<EmailAccount[]> {
-    const userObjectId = new Types.ObjectId(userId);
     return this.accountModel
       .find({
-        $or: [
-          { createdBy: userObjectId },
-          { sharedWith: userObjectId },
-        ],
+        $or: this.buildUserMatch(userId),
       })
       .populate('createdBy', 'fullName email')
       .sort({ createdAt: -1 })
@@ -894,7 +892,7 @@ export class EmailService {
   }> {
     const accounts = await this.accountModel
       .find({
-        $or: [{ createdBy: userId }, { sharedWith: userId }],
+        $or: this.buildUserMatch(userId),
       })
       .exec();
 
@@ -983,5 +981,19 @@ export class EmailService {
       },
     };
     return configs[provider];
+  }
+
+  private buildUserMatch(userId: string) {
+    const matches: Array<Record<string, unknown>> = [
+      { createdBy: userId },
+      { sharedWith: userId },
+    ];
+
+    if (Types.ObjectId.isValid(userId)) {
+      const objectId = new Types.ObjectId(userId);
+      matches.push({ createdBy: objectId }, { sharedWith: objectId });
+    }
+
+    return matches;
   }
 }
