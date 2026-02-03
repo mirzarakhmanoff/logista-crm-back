@@ -16,5 +16,6 @@ export class AuthResponseDto {
     email: string;
     fullName: string;
     role: UserRole;
+    mustChangePassword?: boolean;
   };
 }
