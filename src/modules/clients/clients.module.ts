@@ -7,10 +7,26 @@ import { Client, ClientSchema } from './schemas/client.schema';
 import { ClientsService } from './clients.service';
 import { ClientsController } from './clients.controller';
 import { RequestsModule } from '../requests/requests.module';
+import { Request, RequestSchema } from '../requests/schemas/request.schema';
+import { Document, DocumentSchema } from '../documents/schemas/document.schema';
+import { Invoice, InvoiceSchema } from '../invoices/schemas/invoice.schema';
+import { Shipment, ShipmentSchema } from '../shipments/schemas/shipment.schema';
+import { RateQuote, RateQuoteSchema } from '../rate-quotes/schemas/rate-quote.schema';
+import { IssuedCode, IssuedCodeSchema } from '../issued-codes/schemas/issued-code.schema';
+import { ActivityLog, ActivityLogSchema } from '../activity-logs/schemas/activity-log.schema';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Client.name, schema: ClientSchema }]),
+    MongooseModule.forFeature([
+      { name: Client.name, schema: ClientSchema },
+      { name: Request.name, schema: RequestSchema },
+      { name: Document.name, schema: DocumentSchema },
+      { name: Invoice.name, schema: InvoiceSchema },
+      { name: Shipment.name, schema: ShipmentSchema },
+      { name: RateQuote.name, schema: RateQuoteSchema },
+      { name: IssuedCode.name, schema: IssuedCodeSchema },
+      { name: ActivityLog.name, schema: ActivityLogSchema },
+    ]),
     MulterModule.register({
       storage: diskStorage({
         destination: './uploads/clients',

@@ -54,13 +54,18 @@ export class ClientsController {
 
   @Get(':id')
   async findOne(@Param('id') id: string) {
-    return this.clientsService.findOne(id);
+    return this.clientsService.findOneWithAllRelations(id);
   }
 
   @Get(':id/requests')
   async getClientRequests(@Param('id') id: string) {
     await this.clientsService.findOne(id);
     return this.requestsService.findByClient(id);
+  }
+
+  @Get(':id/basic')
+  async findOneBasic(@Param('id') id: string) {
+    return this.clientsService.findOne(id);
   }
 
   @Patch(':id')

@@ -1,9 +1,16 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Client, ClientType } from './schemas/client.schema';
+import { Request } from '../requests/schemas/request.schema';
+import { Document } from '../documents/schemas/document.schema';
+import { Invoice } from '../invoices/schemas/invoice.schema';
+import { Shipment } from '../shipments/schemas/shipment.schema';
+import { RateQuote } from '../rate-quotes/schemas/rate-quote.schema';
+import { IssuedCode } from '../issued-codes/schemas/issued-code.schema';
+import { ActivityLog } from '../activity-logs/schemas/activity-log.schema';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { FilterClientDto } from './dto/filter-client.dto';
@@ -13,6 +20,13 @@ import { SocketGateway } from '../../socket/socket.gateway';
 export class ClientsService {
   constructor(
     @InjectModel(Client.name) private clientModel: Model<Client>,
+    @InjectModel(Request.name) private requestModel: Model<Request>,
+    @InjectModel(Document.name) private documentModel: Model<Document>,
+    @InjectModel(Invoice.name) private invoiceModel: Model<Invoice>,
+    @InjectModel(Shipment.name) private shipmentModel: Model<Shipment>,
+    @InjectModel(RateQuote.name) private rateQuoteModel: Model<RateQuote>,
+    @InjectModel(IssuedCode.name) private issuedCodeModel: Model<IssuedCode>,
+    @InjectModel(ActivityLog.name) private activityLogModel: Model<ActivityLog>,
     private socketGateway: SocketGateway,
   ) {}
 
@@ -187,5 +201,119 @@ export class ClientsService {
     await this.clientModel.findByIdAndDelete(id).exec();
 
     this.socketGateway.emitToAll('clientDeleted', { clientId: id });
+  }
+
+  async findOneWithAllRelations(id: string): Promise<any> {
+    const client = await this.clientModel
+      .findById(id)
+      .populate('createdBy', 'fullName email')
+      .exec();
+
+    if (!client) {
+      throw new NotFoundException(`Client with ID ${id} not found`);
+    }
+
+    const clientObjectId = new Types.ObjectId(id);
+
+    // Fetch all requests for this client
+    const requests = await this.requestModel
+      .find({ clientId: clientObjectId, isArchived: { $ne: true } })
+      .populate('assignedTo', 'fullName email')
+      .populate('createdBy', 'fullName email')
+      .sort({ createdAt: -1 })
+      .exec();
+
+    const requestIds = requests.map((r) => r._id);
+
+    // Fetch all related data in parallel
+    const [
+      documents,
+      invoices,
+      shipments,
+      rateQuotes,
+      issuedCodes,
+      activityLogs,
+    ] = await Promise.all([
+      // Documents linked to this client
+      this.documentModel
+        .find({ client: clientObjectId, isArchived: { $ne: true } })
+        .populate('assignedTo', 'fullName email')
+        .populate('createdBy', 'fullName email')
+        .sort({ createdAt: -1 })
+        .exec(),
+
+      // Invoices from client's requests
+      this.invoiceModel
+        .find({ requestId: { $in: requestIds }, isArchived: { $ne: true } })
+        .populate('createdBy', 'fullName email')
+        .sort({ createdAt: -1 })
+        .exec(),
+
+      // Shipments from client's requests
+      this.shipmentModel
+        .find({ requestId: { $in: requestIds }, isArchived: { $ne: true } })
+        .populate('createdBy', 'fullName email')
+        .sort({ createdAt: -1 })
+        .exec(),
+
+      // Rate quotes from client's requests
+      this.rateQuoteModel
+        .find({ requestId: { $in: requestIds }, isArchived: { $ne: true } })
+        .populate('createdBy', 'fullName email')
+        .sort({ createdAt: -1 })
+        .exec(),
+
+      // Issued codes from client's requests
+      this.issuedCodeModel
+        .find({ requestId: { $in: requestIds }, isArchived: { $ne: true } })
+        .populate('issuedBy', 'fullName email')
+        .sort({ issuedAt: -1 })
+        .exec(),
+
+      // Activity logs for this client
+      this.activityLogModel
+        .find({ entityType: 'CLIENT', entityId: id })
+        .populate('userId', 'fullName email avatar')
+        .sort({ createdAt: -1 })
+        .limit(50)
+        .exec(),
+    ]);
+
+    // Calculate statistics
+    const stats = {
+      totalRequests: requests.length,
+      requestsByStatus: requests.reduce((acc, req) => {
+        acc[req.statusKey] = (acc[req.statusKey] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>),
+      totalDocuments: documents.length,
+      totalInvoices: invoices.length,
+      totalShipments: shipments.length,
+      totalRateQuotes: rateQuotes.length,
+      totalIssuedCodes: issuedCodes.length,
+      financials: {
+        totalInvoiceAmount: invoices.reduce((sum, inv) => sum + (inv.amount || 0), 0),
+        totalPaidAmount: invoices.reduce((sum, inv) => sum + (inv.paidAmount || 0), 0),
+        unpaidAmount: invoices.reduce(
+          (sum, inv) => sum + ((inv.amount || 0) - (inv.paidAmount || 0)),
+          0,
+        ),
+        currency: invoices[0]?.currency || 'USD',
+      },
+      shipmentsInTransit: shipments.filter((s) => s.status === 'IN_TRANSIT').length,
+      activeIssuedCodes: issuedCodes.filter((c) => c.status === 'ACTIVE').length,
+    };
+
+    return {
+      client,
+      requests,
+      documents,
+      invoices,
+      shipments,
+      rateQuotes,
+      issuedCodes,
+      activityLogs,
+      stats,
+    };
   }
 }
