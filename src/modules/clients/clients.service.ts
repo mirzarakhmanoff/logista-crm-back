@@ -50,7 +50,9 @@ export class ClientsService {
   }
 
   async findAll(filterDto: FilterClientDto): Promise<{ data: Client[]; total: number; page: number; limit: number }> {
-    const query: any = {};
+    const query: any = {
+      isArchived: { $ne: true },
+    };
     const page = filterDto.page || 1;
     const limit = filterDto.limit || 20;
     const skip = (page - 1) * limit;

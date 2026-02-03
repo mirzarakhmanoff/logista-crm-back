@@ -42,6 +42,15 @@ export class Invoice extends Document {
 
   @Prop()
   notes?: string;
+
+  @Prop({ default: false })
+  isArchived: boolean;
+
+  @Prop()
+  archivedAt?: Date;
+
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  archivedBy?: Types.ObjectId;
 }
 
 export const InvoiceSchema = SchemaFactory.createForClass(Invoice);
@@ -49,3 +58,4 @@ export const InvoiceSchema = SchemaFactory.createForClass(Invoice);
 InvoiceSchema.index({ requestId: 1, createdAt: -1 });
 InvoiceSchema.index({ status: 1, dueDate: 1 });
 InvoiceSchema.index({ number: 1 });
+InvoiceSchema.index({ isArchived: 1, archivedAt: -1 });

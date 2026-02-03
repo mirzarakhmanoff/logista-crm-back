@@ -39,6 +39,15 @@ export class IssuedCode extends Document {
 
   @Prop()
   notes?: string;
+
+  @Prop({ default: false })
+  isArchived: boolean;
+
+  @Prop()
+  archivedAt?: Date;
+
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  archivedBy?: Types.ObjectId;
 }
 
 export const IssuedCodeSchema = SchemaFactory.createForClass(IssuedCode);
@@ -46,3 +55,4 @@ export const IssuedCodeSchema = SchemaFactory.createForClass(IssuedCode);
 IssuedCodeSchema.index({ code: 1 }, { unique: true });
 IssuedCodeSchema.index({ requestId: 1, status: 1 });
 IssuedCodeSchema.index({ status: 1 });
+IssuedCodeSchema.index({ isArchived: 1, archivedAt: -1 });

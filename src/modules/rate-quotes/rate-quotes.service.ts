@@ -45,7 +45,7 @@ export class RateQuotesService {
 
   async findByRequest(requestId: string): Promise<RateQuote[]> {
     return this.rateQuoteModel
-      .find({ requestId: new Types.ObjectId(requestId) })
+      .find({ requestId: new Types.ObjectId(requestId), isArchived: { $ne: true } })
       .populate('createdBy', 'fullName email')
       .sort({ createdAt: -1 })
       .exec();

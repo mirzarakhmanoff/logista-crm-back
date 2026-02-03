@@ -45,9 +45,19 @@ export class RateQuote extends Document {
 
   @Prop()
   notes?: string;
+
+  @Prop({ default: false })
+  isArchived: boolean;
+
+  @Prop()
+  archivedAt?: Date;
+
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  archivedBy?: Types.ObjectId;
 }
 
 export const RateQuoteSchema = SchemaFactory.createForClass(RateQuote);
 
 RateQuoteSchema.index({ requestId: 1, createdAt: -1 });
 RateQuoteSchema.index({ status: 1 });
+RateQuoteSchema.index({ isArchived: 1, archivedAt: -1 });

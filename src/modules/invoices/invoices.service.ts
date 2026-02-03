@@ -47,7 +47,7 @@ export class InvoicesService {
 
   async findByRequest(requestId: string): Promise<Invoice[]> {
     return this.invoiceModel
-      .find({ requestId: new Types.ObjectId(requestId) })
+      .find({ requestId: new Types.ObjectId(requestId), isArchived: { $ne: true } })
       .populate('createdBy', 'fullName email')
       .sort({ createdAt: -1 })
       .exec();
@@ -138,7 +138,10 @@ export class InvoicesService {
 
   async getUnpaid(): Promise<Invoice[]> {
     return this.invoiceModel
-      .find({ status: { $in: [InvoiceStatus.UNPAID, InvoiceStatus.PARTIAL] } })
+      .find({
+        status: { $in: [InvoiceStatus.UNPAID, InvoiceStatus.PARTIAL] },
+        isArchived: { $ne: true },
+      })
       .populate('requestId')
       .populate('createdBy', 'fullName email')
       .sort({ dueDate: 1 })

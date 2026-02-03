@@ -45,7 +45,7 @@ export class ShipmentsService {
 
   async findByRequest(requestId: string): Promise<Shipment[]> {
     return this.shipmentModel
-      .find({ requestId: new Types.ObjectId(requestId) })
+      .find({ requestId: new Types.ObjectId(requestId), isArchived: { $ne: true } })
       .populate('createdBy', 'fullName email')
       .sort({ createdAt: -1 })
       .exec();
@@ -99,7 +99,7 @@ export class ShipmentsService {
 
   async getInTransit(): Promise<Shipment[]> {
     return this.shipmentModel
-      .find({ status: ShipmentStatus.IN_TRANSIT })
+      .find({ status: ShipmentStatus.IN_TRANSIT, isArchived: { $ne: true } })
       .populate('requestId')
       .populate('createdBy', 'fullName email')
       .sort({ departureDate: 1 })

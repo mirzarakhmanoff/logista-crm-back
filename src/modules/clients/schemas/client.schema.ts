@@ -37,6 +37,15 @@ export class Client extends Document {
 
   @Prop({ type: Types.ObjectId, ref: 'User' })
   createdBy?: Types.ObjectId;
+
+  @Prop({ default: false })
+  isArchived: boolean;
+
+  @Prop()
+  archivedAt?: Date;
+
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  archivedBy?: Types.ObjectId;
 }
 
 export const ClientSchema = SchemaFactory.createForClass(Client);
@@ -44,3 +53,4 @@ export const ClientSchema = SchemaFactory.createForClass(Client);
 ClientSchema.index({ name: 'text', company: 'text', phone: 'text', email: 'text' });
 ClientSchema.index({ createdAt: -1 });
 ClientSchema.index({ type: 1, createdAt: -1 });
+ClientSchema.index({ isArchived: 1, archivedAt: -1 });

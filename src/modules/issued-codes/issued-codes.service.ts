@@ -51,7 +51,7 @@ export class IssuedCodesService {
 
   async findByRequest(requestId: string): Promise<IssuedCode[]> {
     return this.issuedCodeModel
-      .find({ requestId: new Types.ObjectId(requestId) })
+      .find({ requestId: new Types.ObjectId(requestId), isArchived: { $ne: true } })
       .populate('issuedBy', 'fullName email')
       .sort({ issuedAt: -1 })
       .exec();
@@ -114,7 +114,7 @@ export class IssuedCodesService {
 
   async getActiveCodes(): Promise<IssuedCode[]> {
     return this.issuedCodeModel
-      .find({ status: CodeStatus.ACTIVE })
+      .find({ status: CodeStatus.ACTIVE, isArchived: { $ne: true } })
       .populate('requestId')
       .populate('issuedBy', 'fullName email')
       .sort({ issuedAt: -1 })

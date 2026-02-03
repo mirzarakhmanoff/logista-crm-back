@@ -87,6 +87,12 @@ export class Document extends MongooseDocument {
 
   @Prop({ default: false })
   isArchived: boolean;
+
+  @Prop()
+  archivedAt?: Date;
+
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  archivedBy?: Types.ObjectId;
 }
 
 export const DocumentSchema = SchemaFactory.createForClass(Document);
@@ -112,3 +118,6 @@ DocumentSchema.pre('validate', async function () {
     this.documentNumber = `${prefix}${String(nextNumber).padStart(3, '0')}`;
   }
 });
+
+DocumentSchema.index({ isArchived: 1, archivedAt: -1 });
+DocumentSchema.index({ status: 1, createdAt: -1 });

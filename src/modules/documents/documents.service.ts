@@ -150,8 +150,12 @@ export class DocumentsService {
     }
     if (updateStatusDto.status === DocumentStatus.ARCHIVED) {
       updateData.isArchived = true;
+      updateData.archivedAt = new Date();
+      updateData.archivedBy = userId;
     } else {
       updateData.isArchived = false;
+      updateData.archivedAt = null;
+      updateData.archivedBy = null;
     }
 
     const updatedDocument = await this.documentModel

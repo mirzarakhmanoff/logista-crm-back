@@ -186,6 +186,15 @@ export class Request extends Document {
   })
   files: RequestFile[];
 
+  @Prop({ default: false })
+  isArchived: boolean;
+
+  @Prop()
+  archivedAt?: Date;
+
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  archivedBy?: Types.ObjectId;
+
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -196,3 +205,4 @@ RequestSchema.index({ type: 1, statusKey: 1, createdAt: -1 });
 RequestSchema.index({ clientId: 1, createdAt: -1 });
 RequestSchema.index({ assignedTo: 1, statusKey: 1 });
 RequestSchema.index({ type: 1, statusKey: 1, position: 1 });
+RequestSchema.index({ isArchived: 1, archivedAt: -1 });

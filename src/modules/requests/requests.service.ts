@@ -142,7 +142,9 @@ export class RequestsService {
   }
 
   async findAll(filterDto: FilterRequestDto): Promise<{ data: Request[]; total: number; page: number; limit: number }> {
-    const query: any = {};
+    const query: any = {
+      isArchived: { $ne: true },
+    };
     const page = filterDto.page || 1;
     const limit = filterDto.limit || 20;
     const skip = (page - 1) * limit;
@@ -350,7 +352,7 @@ export class RequestsService {
     const statuses = this.getStatusDefinitions(type);
 
     const requests = await this.requestModel
-      .find({ type })
+      .find({ type, isArchived: { $ne: true } })
       .populate('clientId', 'name company phone email')
       .populate('assignedTo', 'fullName email')
       .sort({ position: 1 })
