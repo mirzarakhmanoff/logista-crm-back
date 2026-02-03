@@ -99,7 +99,6 @@ export const EmailMessageSchema =
   SchemaFactory.createForClass(EmailMessage);
 
 EmailMessageSchema.index({ accountId: 1, date: -1 });
-EmailMessageSchema.index({ messageId: 1 }, { unique: true });
 EmailMessageSchema.index({ accountId: 1, uid: 1 });
 EmailMessageSchema.index({ threadId: 1, date: 1 });
 EmailMessageSchema.index({ direction: 1, status: 1 });

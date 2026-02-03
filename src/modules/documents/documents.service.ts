@@ -9,7 +9,7 @@ import { Document, DocumentStatus } from './schemas/document.schema';
 import { CreateDocumentDto } from './dto/create-document.dto';
 import { UpdateDocumentDto } from './dto/update-document.dto';
 import { FilterDocumentDto } from './dto/filter-document.dto';
-import { UpdateStatusDto } from './dto/update-status.dto';
+import { UpdateDocumentStatusDto } from './dto/update-status.dto';
 import { ActivityLogsService } from '../activity-logs/activity-logs.service';
 import { SocketGateway } from '../../socket/socket.gateway';
 
@@ -138,7 +138,7 @@ export class DocumentsService {
 
   async updateStatus(
     id: string,
-    updateStatusDto: UpdateStatusDto,
+    updateStatusDto: UpdateDocumentStatusDto,
     userId: string,
   ): Promise<Document> {
     const document = await this.findOne(id);

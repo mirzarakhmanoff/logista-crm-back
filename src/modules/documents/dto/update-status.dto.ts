@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty } from 'class-validator';
 import { DocumentStatus } from '../schemas/document.schema';
 
-export class UpdateStatusDto {
+export class UpdateDocumentStatusDto {
   @ApiProperty({
     description: 'New document status',
     enum: DocumentStatus,

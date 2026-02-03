@@ -29,7 +29,7 @@ import { DocumentsService } from './documents.service';
 import { CreateDocumentDto } from './dto/create-document.dto';
 import { UpdateDocumentDto } from './dto/update-document.dto';
 import { FilterDocumentDto } from './dto/filter-document.dto';
-import { UpdateStatusDto } from './dto/update-status.dto';
+import { UpdateDocumentStatusDto } from './dto/update-status.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -127,7 +127,7 @@ export class DocumentsController {
   })
   async updateStatus(
     @Param('id') id: string,
-    @Body() updateStatusDto: UpdateStatusDto,
+    @Body() updateStatusDto: UpdateDocumentStatusDto,
     @CurrentUser() user: any,
   ) {
     return this.documentsService.updateStatus(id, updateStatusDto, user.userId);

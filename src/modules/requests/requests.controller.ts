@@ -20,7 +20,7 @@ import type { Response } from 'express';
 import { RequestsService } from './requests.service';
 import { CreateRequestDto } from './dto/create-request.dto';
 import { UpdateRequestDto } from './dto/update-request.dto';
-import { UpdateStatusDto } from './dto/update-status.dto';
+import { UpdateRequestStatusDto } from './dto/update-status.dto';
 import { FilterRequestDto } from './dto/filter-request.dto';
 import { MoveRequestDto } from './dto/move-request.dto';
 import { AddCommentDto } from './dto/add-comment.dto';
@@ -78,7 +78,7 @@ export class RequestsController {
   @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR)
   async updateStatus(
     @Param('id') id: string,
-    @Body() updateStatusDto: UpdateStatusDto,
+    @Body() updateStatusDto: UpdateRequestStatusDto,
     @CurrentUser() user: any,
   ) {
     return this.requestsService.updateStatus(id, updateStatusDto.toKey, user.userId);

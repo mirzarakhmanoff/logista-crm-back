@@ -52,7 +52,6 @@ export class IssuedCode extends Document {
 
 export const IssuedCodeSchema = SchemaFactory.createForClass(IssuedCode);
 
-IssuedCodeSchema.index({ code: 1 }, { unique: true });
 IssuedCodeSchema.index({ requestId: 1, status: 1 });
 IssuedCodeSchema.index({ status: 1 });
 IssuedCodeSchema.index({ isArchived: 1, archivedAt: -1 });
