@@ -37,7 +37,7 @@ export class UsersService {
 
   private canCreateRole(creatorRole: UserRole, targetRole: UserRole): boolean {
     if (creatorRole === UserRole.ADMIN) {
-      return targetRole === UserRole.DIRECTOR;
+      return true;
     }
     if (creatorRole === UserRole.DIRECTOR) {
       return [UserRole.MANAGER, UserRole.ACCOUNTANT, UserRole.ADMINISTRATOR].includes(targetRole);
