@@ -61,6 +61,13 @@ export class UsersService {
     return this.userModel.find().select('-password').exec();
   }
 
+  async findAllBasic(): Promise<Pick<User, '_id' | 'fullName' | 'role' | 'avatar'>[]> {
+    return this.userModel
+      .find({ isActive: true })
+      .select('fullName role avatar')
+      .exec();
+  }
+
   async findByRole(role: UserRole): Promise<User[]> {
     return this.userModel.find({ role }).select('-password').exec();
   }
@@ -129,14 +136,21 @@ export class UsersService {
 
     const savedUser = await user.save();
 
-    await this.notificationEmailService.sendInvitationEmail({
-      to: inviteDto.email,
-      fullName: inviteDto.fullName,
-      role: inviteDto.role,
-      password: plainPassword,
-      invitationCode,
-      invitedByName: inviter.fullName,
-    });
+    try {
+      await this.notificationEmailService.sendInvitationEmail({
+        to: inviteDto.email,
+        fullName: inviteDto.fullName,
+        role: inviteDto.role,
+        password: plainPassword,
+        invitationCode,
+        invitedByName: inviter.fullName,
+      });
+    } catch (error) {
+      await this.userModel.findByIdAndDelete(savedUser._id);
+      throw new BadRequestException(
+        `Foydalanuvchi yaratildi, lekin email yuborishda xato: ${error.message}`,
+      );
+    }
 
     const { password: _, ...result } = savedUser.toObject();
     return result as any;
@@ -193,14 +207,20 @@ export class UsersService {
 
     await user.save();
 
-    await this.notificationEmailService.sendInvitationEmail({
-      to: user.email,
-      fullName: user.fullName,
-      role: user.role,
-      password: plainPassword,
-      invitationCode,
-      invitedByName: resender.fullName,
-    });
+    try {
+      await this.notificationEmailService.sendInvitationEmail({
+        to: user.email,
+        fullName: user.fullName,
+        role: user.role,
+        password: plainPassword,
+        invitationCode,
+        invitedByName: resender.fullName,
+      });
+    } catch (error) {
+      throw new BadRequestException(
+        `Taklif yangilandi, lekin email yuborishda xato: ${error.message}`,
+      );
+    }
 
     const { password: _, ...result } = user.toObject();
     return result as any;

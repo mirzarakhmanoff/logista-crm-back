@@ -1,6 +1,7 @@
 import {
   ConflictException,
   Injectable,
+  Logger,
   UnauthorizedException,
   BadRequestException,
 } from '@nestjs/common';
@@ -15,6 +16,8 @@ import { InvitationStatus, UserRole } from '../users/schemas/user.schema';
 
 @Injectable()
 export class AuthService {
+  private logger = new Logger('AuthService');
+
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
@@ -82,28 +85,28 @@ export class AuthService {
     const user = await this.usersService.findByEmail(email);
 
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Foydalanuvchi topilmadi');
     }
 
     if (user.invitationStatus !== InvitationStatus.PENDING) {
       throw new BadRequestException(
-        'This invitation has already been used or expired. Please login normally.',
+        'Bu taklif allaqachon ishlatilgan yoki muddati o\'tgan. Oddiy login orqali kiring.',
       );
     }
 
     if (user.invitationCode !== invitationCode.toUpperCase()) {
-      throw new UnauthorizedException('Invalid invitation code');
+      throw new UnauthorizedException('Noto\'g\'ri aktivatsiya kodi');
     }
 
     if (user.invitationCodeExpires && user.invitationCodeExpires < new Date()) {
       user.invitationStatus = InvitationStatus.EXPIRED;
       await user.save();
-      throw new BadRequestException('Invitation code has expired');
+      throw new BadRequestException('Aktivatsiya kodi muddati tugagan');
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+    // Aktivatsiyada yangi parol o'rnatish (emaildagi vaqtinchalik parol o'rniga)
+    if (password) {
+      user.password = await bcrypt.hash(password, 10);
     }
 
     // Activate the invitation

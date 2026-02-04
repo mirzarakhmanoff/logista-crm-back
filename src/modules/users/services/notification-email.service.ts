@@ -27,10 +27,11 @@ export class NotificationEmailService {
     const smtpPass = this.configService.get<string>('SMTP_PASS');
 
     if (smtpHost && smtpUser && smtpPass) {
+      const port = Number(smtpPort);
       this.transporter = nodemailer.createTransport({
         host: smtpHost,
-        port: smtpPort,
-        secure: smtpPort === 465,
+        port,
+        secure: port === 465,
         auth: {
           user: smtpUser,
           pass: smtpPass,
@@ -38,6 +39,8 @@ export class NotificationEmailService {
         tls: {
           rejectUnauthorized: false,
         },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
       });
 
       this.transporter.verify((error) => {
@@ -167,26 +170,21 @@ Muhim: Bu kod faqat bir marta ishlatiladi va 24 soat ichida amal qiladi.
       return true;
     }
 
-    try {
-      const smtpFrom = this.configService.get<string>(
-        'SMTP_FROM',
-        this.configService.get<string>('SMTP_USER', 'noreply@logista.uz'),
-      );
+    const smtpFrom = this.configService.get<string>(
+      'SMTP_FROM',
+      this.configService.get<string>('SMTP_USER', 'noreply@logista.uz'),
+    );
 
-      await this.transporter.sendMail({
-        from: `"Logista CRM" <${smtpFrom}>`,
-        to: data.to,
-        subject: 'Logista CRM - Tizimga taklif',
-        text: textContent,
-        html: htmlContent,
-      });
+    await this.transporter.sendMail({
+      from: `"Logista CRM" <${smtpFrom}>`,
+      to: data.to,
+      subject: 'Logista CRM - Tizimga taklif',
+      text: textContent,
+      html: htmlContent,
+    });
 
-      this.logger.log(`Invitation email sent to ${data.to}`);
-      return true;
-    } catch (error) {
-      this.logger.error(`Failed to send invitation email: ${error.message}`);
-      return false;
-    }
+    this.logger.log(`Invitation email sent to ${data.to}`);
+    return true;
   }
 
   async sendPasswordResetEmail(

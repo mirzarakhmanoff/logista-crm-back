@@ -66,6 +66,13 @@ export class UsersController {
     return this.usersService.resendInvitation(id, user.userId || user.sub);
   }
 
+  @Get('basic')
+  @ApiOperation({ summary: 'Get all users basic info (for chat, selection etc.)' })
+  @ApiResponse({ status: 200, description: 'List of users with basic info' })
+  async findAllBasic() {
+    return this.usersService.findAllBasic();
+  }
+
   @Get()
   @Roles(UserRole.ADMIN, UserRole.DIRECTOR)
   @ApiOperation({ summary: 'Get all users (Admin/Director only)' })

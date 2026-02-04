@@ -72,7 +72,7 @@ export class AuthController {
   ): Promise<AuthResponseDto> {
     return this.authService.loginWithInvitationCode(
       dto.email,
-      dto.password,
+      dto.password || '',
       dto.invitationCode,
     );
   }

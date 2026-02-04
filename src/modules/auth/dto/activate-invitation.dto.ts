@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class ActivateInvitationDto {
   @ApiProperty({ example: 'user@example.com' })
@@ -7,10 +7,10 @@ export class ActivateInvitationDto {
   @IsNotEmpty()
   email: string;
 
-  @ApiProperty({ example: 'MyPassword123' })
+  @ApiProperty({ example: 'MyNewPassword123', description: 'Yangi parol (ixtiyoriy)' })
   @IsString()
-  @IsNotEmpty()
-  password: string;
+  @IsOptional()
+  password?: string;
 
   @ApiProperty({ example: 'ABC123', description: 'One-time invitation code' })
   @IsString()
