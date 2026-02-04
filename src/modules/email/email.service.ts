@@ -129,11 +129,9 @@ export class EmailService {
     return this.accountModel.findById(saved._id).exec() as Promise<EmailAccount>;
   }
 
-  async findAllAccounts(userId: string): Promise<EmailAccount[]> {
+  async findAllAccounts(): Promise<EmailAccount[]> {
     return this.accountModel
-      .find({
-        $or: this.buildUserMatch(userId),
-      })
+      .find()
       .populate('createdBy', 'fullName email')
       .sort({ createdAt: -1 })
       .exec();
@@ -883,7 +881,7 @@ export class EmailService {
 
   // ==================== STATS ====================
 
-  async getEmailStats(userId: string): Promise<{
+  async getEmailStats(): Promise<{
     totalAccounts: number;
     totalMessages: number;
     unreadCount: number;
@@ -891,9 +889,7 @@ export class EmailService {
     receivedToday: number;
   }> {
     const accounts = await this.accountModel
-      .find({
-        $or: this.buildUserMatch(userId),
-      })
+      .find()
       .exec();
 
     const accountIds = accounts.map((a) => a._id);

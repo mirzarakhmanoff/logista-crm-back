@@ -59,8 +59,8 @@ export class EmailController {
   @Get('accounts')
   @ApiOperation({ summary: 'Barcha email akkauntlarni olish' })
   @ApiResponse({ status: 200, description: 'Email akkauntlar ro\'yxati' })
-  async getAccounts(@CurrentUser() user: any) {
-    return this.emailService.findAllAccounts(user.userId);
+  async getAccounts() {
+    return this.emailService.findAllAccounts();
   }
 
   @Get('accounts/:id')
@@ -304,8 +304,8 @@ export class EmailController {
 
   @Get('stats')
   @ApiOperation({ summary: 'Email statistikasi (dashboard uchun)' })
-  async getStats(@CurrentUser() user: any) {
-    return this.emailService.getEmailStats(user.userId);
+  async getStats() {
+    return this.emailService.getEmailStats();
   }
 
   // ==================== ATTACHMENTS ====================
