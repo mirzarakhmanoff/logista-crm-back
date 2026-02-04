@@ -59,11 +59,11 @@ export class NotificationEmailService {
 
   private getRoleName(role: string): string {
     const roleNames: Record<string, string> = {
-      admin: 'Administrator',
-      director: 'Direktor',
-      manager: 'Menedjer',
-      accountant: 'Buxgalter',
-      administrator: 'Administrator',
+      admin: 'Администратор',
+      director: 'Директор',
+      manager: 'Менеджер',
+      accountant: 'Бухгалтер',
+      administrator: 'Администратор',
     };
     return roleNames[role] || role;
   }
@@ -99,36 +99,36 @@ export class NotificationEmailService {
   <div class="container">
     <div class="header">
       <h1>Logista CRM</h1>
-      <p>Tizimga taklif</p>
+      <p>Приглашение в систему</p>
     </div>
     <div class="content">
-      <h2>Assalomu alaykum, ${data.fullName}!</h2>
+      <h2>Здравствуйте, ${data.fullName}!</h2>
 
-      <p><strong>${data.invitedByName}</strong> sizni Logista CRM tizimiga taklif qildi.</p>
+      <p><strong>${data.invitedByName}</strong> пригласил(а) вас в систему Logista CRM.</p>
 
       <div class="credentials">
-        <h3>Kirish ma'lumotlari:</h3>
+        <h3>Данные для входа:</h3>
         <p><strong>Email:</strong> ${data.to}</p>
-        <p><strong>Parol:</strong> ${data.password}</p>
-        <p><strong>Lavozim:</strong> ${roleName}</p>
+        <p><strong>Пароль:</strong> ${data.password}</p>
+        <p><strong>Должность:</strong> ${roleName}</p>
       </div>
 
-      <p>Tizimga kirish uchun quyidagi bir martalik kodni ishlating:</p>
+      <p>Для входа в систему используйте одноразовый код активации:</p>
 
       <div class="code-box">${data.invitationCode}</div>
 
       <p style="text-align: center;">
-        <a href="${activationLink}" class="button">Tizimga kirish</a>
+        <a href="${activationLink}" class="button">Войти в систему</a>
       </p>
 
       <div class="warning">
-        <strong>Muhim:</strong> Bu kod faqat bir marta ishlatiladi va 24 soat ichida amal qiladi.
-        Birinchi kirishdan so'ng parolingizni o'zgartirishingiz tavsiya etiladi.
+        <strong>Важно:</strong> Данный код можно использовать только один раз. Срок действия — 24 часа.
+        После первого входа рекомендуется сменить пароль.
       </div>
 
       <div class="footer">
-        <p>Agar siz bu taklifni kutmagan bo'lsangiz, iltimos bu xabarni e'tiborsiz qoldiring.</p>
-        <p>&copy; ${new Date().getFullYear()} Logista CRM. Barcha huquqlar himoyalangan.</p>
+        <p>Если вы не ожидали это приглашение, просто проигнорируйте данное сообщение.</p>
+        <p>&copy; ${new Date().getFullYear()} Logista CRM. Все права защищены.</p>
       </div>
     </div>
   </div>
@@ -137,21 +137,21 @@ export class NotificationEmailService {
     `;
 
     const textContent = `
-Assalomu alaykum, ${data.fullName}!
+Здравствуйте, ${data.fullName}!
 
-${data.invitedByName} sizni Logista CRM tizimiga taklif qildi.
+${data.invitedByName} пригласил(а) вас в систему Logista CRM.
 
-Kirish ma'lumotlari:
+Данные для входа:
 - Email: ${data.to}
-- Parol: ${data.password}
-- Lavozim: ${roleName}
+- Пароль: ${data.password}
+- Должность: ${roleName}
 
-Bir martalik aktivatsiya kodi: ${data.invitationCode}
+Одноразовый код активации: ${data.invitationCode}
 
-Tizimga kirish uchun quyidagi havolaga o'ting:
+Для входа в систему перейдите по ссылке:
 ${activationLink}
 
-Muhim: Bu kod faqat bir marta ishlatiladi va 24 soat ichida amal qiladi.
+Важно: Данный код можно использовать только один раз. Срок действия — 24 часа.
 
 © ${new Date().getFullYear()} Logista CRM
     `;
@@ -178,7 +178,7 @@ Muhim: Bu kod faqat bir marta ishlatiladi va 24 soat ichida amal qiladi.
     await this.transporter.sendMail({
       from: `"Logista CRM" <${smtpFrom}>`,
       to: data.to,
-      subject: 'Logista CRM - Tizimga taklif',
+      subject: 'Logista CRM - Приглашение в систему',
       text: textContent,
       html: htmlContent,
     });
@@ -217,22 +217,22 @@ Muhim: Bu kod faqat bir marta ishlatiladi va 24 soat ichida amal qiladi.
   <div class="container">
     <div class="header">
       <h1>Logista CRM</h1>
-      <p>Parolni tiklash</p>
+      <p>Сброс пароля</p>
     </div>
     <div class="content">
-      <h2>Assalomu alaykum, ${fullName}!</h2>
-      <p>Parolni tiklash so'rovi qabul qilindi.</p>
+      <h2>Здравствуйте, ${fullName}!</h2>
+      <p>Получен запрос на сброс пароля.</p>
 
       <div class="code-box">${resetCode}</div>
 
       <p style="text-align: center;">
-        <a href="${resetLink}" class="button">Parolni tiklash</a>
+        <a href="${resetLink}" class="button">Сбросить пароль</a>
       </p>
 
-      <p>Bu kod 1 soat ichida amal qiladi.</p>
+      <p>Код действителен в течение 1 часа.</p>
 
       <div class="footer">
-        <p>Agar siz bu so'rovni yubormagan bo'lsangiz, iltimos bu xabarni e'tiborsiz qoldiring.</p>
+        <p>Если вы не отправляли этот запрос, просто проигнорируйте данное сообщение.</p>
       </div>
     </div>
   </div>
@@ -254,7 +254,7 @@ Muhim: Bu kod faqat bir marta ishlatiladi va 24 soat ichida amal qiladi.
       await this.transporter.sendMail({
         from: `"Logista CRM" <${smtpFrom}>`,
         to,
-        subject: 'Logista CRM - Parolni tiklash',
+        subject: 'Logista CRM - Сброс пароля',
         html: htmlContent,
       });
 
