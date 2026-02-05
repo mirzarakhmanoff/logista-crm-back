@@ -10,6 +10,7 @@ export enum EntityType {
   ISSUED_CODE = 'ISSUED_CODE',
   DOCUMENT = 'DOCUMENT',
   EMAIL = 'EMAIL',
+  INTERNAL_DOCUMENT = 'INTERNAL_DOCUMENT',
 }
 
 export enum ActionType {

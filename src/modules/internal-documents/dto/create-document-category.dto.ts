@@ -30,4 +30,13 @@ export class CreateDocumentCategoryDto {
   @IsEnum(CategoryIcon)
   @IsOptional()
   icon?: CategoryIcon;
+
+  @ApiProperty({
+    description: 'Category color',
+    example: '#8B5CF6',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  color?: string;
 }

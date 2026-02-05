@@ -20,6 +20,9 @@ export class DocumentCategory extends Document {
   @Prop({ type: String, enum: CategoryIcon, default: CategoryIcon.OTHER })
   icon: CategoryIcon;
 
+  @Prop()
+  color?: string;
+
   @Prop({ type: Types.ObjectId, ref: 'User' })
   createdBy?: Types.ObjectId;
 
