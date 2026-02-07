@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsEnum, IsMongoId } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsMongoId, IsNumber, Min } from 'class-validator';
+import { Type } from 'class-transformer';
 import { PersonnelDocumentStatus } from '../schemas/personnel-document.schema';
 
 export class FilterPersonnelDocumentDto {
@@ -38,4 +39,18 @@ export class FilterPersonnelDocumentDto {
   @ApiProperty({ description: 'Filter archived documents', required: false })
   @IsOptional()
   isArchived?: boolean;
+
+  @ApiProperty({ description: 'Page number', required: false, default: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  page?: number = 1;
+
+  @ApiProperty({ description: 'Items per page', required: false, default: 20 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  limit?: number = 20;
 }

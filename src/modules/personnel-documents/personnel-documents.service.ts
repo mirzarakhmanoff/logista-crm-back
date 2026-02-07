@@ -182,8 +182,11 @@ export class PersonnelDocumentsService {
 
   async findAllDocuments(
     filterDto: FilterPersonnelDocumentDto,
-  ): Promise<PersonnelDocument[]> {
+  ): Promise<{ data: PersonnelDocument[]; total: number; page: number; limit: number }> {
     const query: any = {};
+    const page = filterDto.page || 1;
+    const limit = filterDto.limit || 20;
+    const skip = (page - 1) * limit;
 
     if (filterDto.isArchived !== undefined) {
       query.isArchived = filterDto.isArchived;
@@ -206,14 +209,21 @@ export class PersonnelDocumentsService {
       ];
     }
 
-    return this.documentModel
-      .find(query)
-      .populate('category')
-      .populate('assignedTo', 'fullName avatar email')
-      .populate('createdBy', 'fullName avatar email')
-      .populate('files.uploadedBy', 'fullName avatar')
-      .sort({ createdAt: -1 })
-      .exec();
+    const [data, total] = await Promise.all([
+      this.documentModel
+        .find(query)
+        .populate('category')
+        .populate('assignedTo', 'fullName avatar email')
+        .populate('createdBy', 'fullName avatar email')
+        .populate('files.uploadedBy', 'fullName avatar')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      this.documentModel.countDocuments(query),
+    ]);
+
+    return { data, total, page, limit };
   }
 
   async findDocumentById(id: string): Promise<PersonnelDocument> {
