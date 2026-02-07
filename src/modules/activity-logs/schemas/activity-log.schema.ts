@@ -11,6 +11,7 @@ export enum EntityType {
   DOCUMENT = 'DOCUMENT',
   EMAIL = 'EMAIL',
   INTERNAL_DOCUMENT = 'INTERNAL_DOCUMENT',
+  PERSONNEL_DOCUMENT = 'PERSONNEL_DOCUMENT',
 }
 
 export enum ActionType {

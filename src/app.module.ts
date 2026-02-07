@@ -20,6 +20,7 @@ import { EmailModule } from './modules/email/email.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { ArchiveModule } from './modules/archive/archive.module';
 import { InternalDocumentsModule } from './modules/internal-documents/internal-documents.module';
+import { PersonnelDocumentsModule } from './modules/personnel-documents/personnel-documents.module';
 import { SocketModule } from './socket/socket.module';
 import { getDatabaseConfig } from './config/database.config';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -53,6 +54,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     ChatModule,
     ArchiveModule,
     InternalDocumentsModule,
+    PersonnelDocumentsModule,
   ],
   controllers: [AppController],
   providers: [
