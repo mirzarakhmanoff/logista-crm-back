@@ -1,7 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { PaymentStatus } from '../enums/payment-status.enum';
-import { PaymentCategory } from '../enums/payment-category.enum';
 
 export class PaymentFile {
   @Prop({ required: true })
@@ -31,12 +30,7 @@ export class OperationalPayment extends Document {
   @Prop({ required: true })
   counterpartyName: string;
 
-  @Prop({
-    required: true,
-    type: String,
-    enum: PaymentCategory,
-    default: PaymentCategory.OTHER
-  })
+  @Prop({ required: true, type: String })
   counterpartyCategory: string;
 
   @Prop({ required: true, type: Number })

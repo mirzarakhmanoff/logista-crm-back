@@ -28,10 +28,20 @@ export class OperationalPaymentsService {
 
   async create(
     createDto: CreateOperationalPaymentDto,
+    files: Array<Express.Multer.File>,
     createdById: string,
   ): Promise<OperationalPayment> {
     // Generate payment number
     const paymentNumber = await this.generatePaymentNumber();
+
+    // Prepare files data
+    const filesData = files.map((file) => ({
+      filename: file.originalname,
+      fileId: file.filename,
+      path: file.path,
+      uploadedAt: new Date(),
+      uploadedBy: new Types.ObjectId(createdById),
+    }));
 
     const payment = new this.operationalPaymentModel({
       ...createDto,
@@ -40,6 +50,7 @@ export class OperationalPaymentsService {
       createdBy: new Types.ObjectId(createdById),
       responsibleId: new Types.ObjectId(createDto.responsibleId),
       currency: createDto.currency || 'RUB',
+      files: filesData,
     });
 
     const saved = await payment.save();
@@ -49,7 +60,7 @@ export class OperationalPaymentsService {
       entityType: 'OPERATIONAL_PAYMENT',
       entityId: saved._id.toString(),
       action: 'created',
-      message: `Операционный платеж ${saved.paymentNumber} создан`,
+      message: `Операционный платеж ${saved.paymentNumber} создан${files.length > 0 ? ` с ${files.length} файлами` : ''}`,
       userId: createdById,
     });
 
@@ -155,6 +166,7 @@ export class OperationalPaymentsService {
   async update(
     id: string,
     updateDto: UpdateOperationalPaymentDto,
+    files: Array<Express.Multer.File>,
     userId: string,
   ): Promise<OperationalPayment> {
     const payment = await this.findOne(id);
@@ -178,6 +190,19 @@ export class OperationalPaymentsService {
       updateData.responsibleId = new Types.ObjectId(updateDto.responsibleId);
     }
 
+    // Add new files to existing ones
+    if (files && files.length > 0) {
+      const newFiles = files.map((file) => ({
+        filename: file.originalname,
+        fileId: file.filename,
+        path: file.path,
+        uploadedAt: new Date(),
+        uploadedBy: new Types.ObjectId(userId),
+      }));
+
+      updateData.$push = { files: { $each: newFiles } };
+    }
+
     const updated = await this.operationalPaymentModel
       .findByIdAndUpdate(id, updateData, { new: true })
       .populate('responsibleId', 'fullName email avatar')
@@ -194,7 +219,7 @@ export class OperationalPaymentsService {
       entityType: 'OPERATIONAL_PAYMENT',
       entityId: id,
       action: 'updated',
-      message: `Операционный платеж ${payment.paymentNumber} обновлен`,
+      message: `Операционный платеж ${payment.paymentNumber} обновлен${files.length > 0 ? ` (добавлено ${files.length} файлов)` : ''}`,
       userId,
     });
 

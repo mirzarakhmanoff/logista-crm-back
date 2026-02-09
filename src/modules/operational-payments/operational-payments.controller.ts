@@ -9,10 +9,11 @@ import {
   Query,
   UseInterceptors,
   UploadedFile,
+  UploadedFiles,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { ApiTags, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
@@ -37,11 +38,30 @@ export class OperationalPaymentsController {
 
   @Post()
   @Roles(UserRole.ADMIN, UserRole.ACCOUNTANT, UserRole.DIRECTOR, UserRole.MANAGER)
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FilesInterceptor('files', 10, {
+      storage: diskStorage({
+        destination: './uploads/operational-payments',
+        filename: (req, file, cb) => {
+          const randomName = Array(32)
+            .fill(null)
+            .map(() => Math.round(Math.random() * 16).toString(16))
+            .join('');
+          cb(null, `${randomName}${extname(file.originalname)}`);
+        },
+      }),
+      limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB
+      },
+    }),
+  )
   async create(
     @Body() createDto: CreateOperationalPaymentDto,
+    @UploadedFiles() files: Array<Express.Multer.File>,
     @CurrentUser() user: any,
   ) {
-    return this.operationalPaymentsService.create(createDto, user.userId);
+    return this.operationalPaymentsService.create(createDto, files || [], user.userId);
   }
 
   @Get()
@@ -61,12 +81,31 @@ export class OperationalPaymentsController {
 
   @Patch(':id')
   @Roles(UserRole.ADMIN, UserRole.ACCOUNTANT, UserRole.DIRECTOR, UserRole.MANAGER)
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FilesInterceptor('files', 10, {
+      storage: diskStorage({
+        destination: './uploads/operational-payments',
+        filename: (req, file, cb) => {
+          const randomName = Array(32)
+            .fill(null)
+            .map(() => Math.round(Math.random() * 16).toString(16))
+            .join('');
+          cb(null, `${randomName}${extname(file.originalname)}`);
+        },
+      }),
+      limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB
+      },
+    }),
+  )
   async update(
     @Param('id') id: string,
     @Body() updateDto: UpdateOperationalPaymentDto,
+    @UploadedFiles() files: Array<Express.Multer.File>,
     @CurrentUser() user: any,
   ) {
-    return this.operationalPaymentsService.update(id, updateDto, user.userId);
+    return this.operationalPaymentsService.update(id, updateDto, files || [], user.userId);
   }
 
   @Post(':id/submit')

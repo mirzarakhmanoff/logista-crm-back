@@ -1,5 +1,4 @@
-import { IsString, IsNumber, IsMongoId, IsDateString, IsOptional, IsEnum, IsBoolean, Min } from 'class-validator';
-import { PaymentCategory } from '../enums/payment-category.enum';
+import { IsString, IsNumber, IsMongoId, IsDateString, IsOptional, IsBoolean, Min } from 'class-validator';
 
 export class UpdateOperationalPaymentDto {
   @IsOptional()
@@ -11,7 +10,7 @@ export class UpdateOperationalPaymentDto {
   counterpartyName?: string;
 
   @IsOptional()
-  @IsEnum(PaymentCategory)
+  @IsString()
   counterpartyCategory?: string;
 
   @IsOptional()
