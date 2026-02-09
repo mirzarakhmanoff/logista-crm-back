@@ -1,8 +1,6 @@
 import {
   Injectable,
   NotFoundException,
-  BadRequestException,
-  ForbiddenException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -10,9 +8,6 @@ import { OperationalPayment } from './schemas/operational-payment.schema';
 import { CreateOperationalPaymentDto } from './dto/create-operational-payment.dto';
 import { UpdateOperationalPaymentDto } from './dto/update-operational-payment.dto';
 import { FilterOperationalPaymentDto } from './dto/filter-operational-payment.dto';
-import { ApprovePaymentDto } from './dto/approve-payment.dto';
-import { RejectPaymentDto } from './dto/reject-payment.dto';
-import { MarkPaidDto } from './dto/mark-paid.dto';
 import { PaymentStatus } from './enums/payment-status.enum';
 import { ActivityLogsService } from '../activity-logs/activity-logs.service';
 import { SocketGateway } from '../../socket/socket.gateway';
@@ -163,20 +158,24 @@ export class OperationalPaymentsService {
   ): Promise<OperationalPayment> {
     const payment = await this.findOne(id);
 
-    // Check if payment can be updated
-    if (payment.status === PaymentStatus.PAID) {
-      throw new BadRequestException(
-        'Нельзя изменить оплаченный платеж',
-      );
-    }
-
-    if (payment.status === PaymentStatus.CANCELLED) {
-      throw new BadRequestException(
-        'Нельзя изменить отмененный платеж',
-      );
-    }
-
     const updateData: any = { ...updateDto };
+
+    // Handle status change metadata
+    if (updateDto.status) {
+      switch (updateDto.status) {
+        case PaymentStatus.APPROVED:
+          updateData.approvedBy = new Types.ObjectId(userId);
+          updateData.approvedAt = new Date();
+          break;
+        case PaymentStatus.REJECTED:
+          updateData.rejectedBy = new Types.ObjectId(userId);
+          updateData.rejectedAt = new Date();
+          break;
+        case PaymentStatus.PAID:
+          updateData.paidAt = updateDto.paidAt ? new Date(updateDto.paidAt) : new Date();
+          break;
+      }
+    }
 
     // Add new files to existing ones
     if (files && files.length > 0) {
@@ -195,137 +194,6 @@ export class OperationalPaymentsService {
       .findByIdAndUpdate(id, updateData, { new: true })
       .populate('createdBy', 'fullName email')
       .populate('approvedBy', 'fullName email')
-      .exec();
-
-    if (!updated) {
-      throw new NotFoundException(`Операционный платеж с ID ${id} не найден`);
-    }
-
-    // Log activity
-    await this.activityLogsService.log({
-      entityType: 'OPERATIONAL_PAYMENT',
-      entityId: id,
-      action: 'updated',
-      message: `Операционный платеж ${payment.paymentNumber} обновлен${files.length > 0 ? ` (добавлено ${files.length} файлов)` : ''}`,
-      userId,
-    });
-
-    // Emit socket event
-    this.socketGateway.emitToAll('paymentUpdated', updated);
-
-    return updated;
-  }
-
-  async submitForApproval(id: string, userId: string): Promise<OperationalPayment> {
-    const payment = await this.findOne(id);
-
-    if (payment.status !== PaymentStatus.DRAFT) {
-      throw new BadRequestException(
-        'Только черновики можно отправить на утверждение',
-      );
-    }
-
-    const updated = await this.operationalPaymentModel
-      .findByIdAndUpdate(
-        id,
-        { status: PaymentStatus.PENDING_APPROVAL },
-        { new: true },
-      )
-      .populate('createdBy', 'fullName email')
-      .exec();
-
-    if (!updated) {
-      throw new NotFoundException(`Операционный платеж с ID ${id} не найден`);
-    }
-
-    // Log activity
-    await this.activityLogsService.log({
-      entityType: 'OPERATIONAL_PAYMENT',
-      entityId: id,
-      action: 'submitted',
-      message: `Операционный платеж ${payment.paymentNumber} отправлен на утверждение`,
-      userId,
-    });
-
-    // Emit socket event
-    this.socketGateway.emitToAll('paymentSubmitted', updated);
-
-    return updated;
-  }
-
-  async approve(
-    id: string,
-    approveDto: ApprovePaymentDto,
-    userId: string,
-  ): Promise<OperationalPayment> {
-    const payment = await this.findOne(id);
-
-    if (payment.status !== PaymentStatus.PENDING_APPROVAL) {
-      throw new BadRequestException(
-        'Только платежи в статусе "На утверждении" можно утвердить',
-      );
-    }
-
-    const updateData: any = {
-      status: PaymentStatus.APPROVED,
-      approvedBy: new Types.ObjectId(userId),
-      approvedAt: new Date(),
-    };
-
-    if (approveDto.notes) {
-      updateData.notes = approveDto.notes;
-    }
-
-    const updated = await this.operationalPaymentModel
-      .findByIdAndUpdate(id, updateData, { new: true })
-      .populate('createdBy', 'fullName email')
-      .populate('approvedBy', 'fullName email')
-      .exec();
-
-    if (!updated) {
-      throw new NotFoundException(`Операционный платеж с ID ${id} не найден`);
-    }
-
-    // Log activity
-    await this.activityLogsService.log({
-      entityType: 'OPERATIONAL_PAYMENT',
-      entityId: id,
-      action: 'approved',
-      message: `Операционный платеж ${payment.paymentNumber} утвержден`,
-      userId,
-    });
-
-    // Emit socket event
-    this.socketGateway.emitToAll('paymentApproved', updated);
-
-    return updated;
-  }
-
-  async reject(
-    id: string,
-    rejectDto: RejectPaymentDto,
-    userId: string,
-  ): Promise<OperationalPayment> {
-    const payment = await this.findOne(id);
-
-    if (payment.status !== PaymentStatus.PENDING_APPROVAL) {
-      throw new BadRequestException(
-        'Только платежи в статусе "На утверждении" можно отклонить',
-      );
-    }
-
-    const updated = await this.operationalPaymentModel
-      .findByIdAndUpdate(
-        id,
-        {
-          status: PaymentStatus.REJECTED,
-          rejectedBy: new Types.ObjectId(userId),
-          rejectedAt: new Date(),
-          rejectionReason: rejectDto.reason,
-        },
-        { new: true },
-      )
-      .populate('createdBy', 'fullName email')
       .populate('rejectedBy', 'fullName email')
       .exec();
 
@@ -337,95 +205,13 @@ export class OperationalPaymentsService {
     await this.activityLogsService.log({
       entityType: 'OPERATIONAL_PAYMENT',
       entityId: id,
-      action: 'rejected',
-      message: `Операционный платеж ${payment.paymentNumber} отклонен: ${rejectDto.reason}`,
+      action: 'updated',
+      message: `Операционный платеж ${payment.paymentNumber} обновлен${updateDto.status ? ` (статус: ${updateDto.status})` : ''}${files.length > 0 ? ` (добавлено ${files.length} файлов)` : ''}`,
       userId,
     });
 
     // Emit socket event
-    this.socketGateway.emitToAll('paymentRejected', updated);
-
-    return updated;
-  }
-
-  async markAsPaid(
-    id: string,
-    markPaidDto: MarkPaidDto,
-    userId: string,
-  ): Promise<OperationalPayment> {
-    const payment = await this.findOne(id);
-
-    if (payment.status !== PaymentStatus.APPROVED) {
-      throw new BadRequestException(
-        'Только утвержденные платежи можно отметить как оплаченные',
-      );
-    }
-
-    const updated = await this.operationalPaymentModel
-      .findByIdAndUpdate(
-        id,
-        {
-          status: PaymentStatus.PAID,
-          paymentMethod: markPaidDto.paymentMethod,
-          paymentReference: markPaidDto.paymentReference,
-          paidAt: markPaidDto.paidAt ? new Date(markPaidDto.paidAt) : new Date(),
-        },
-        { new: true },
-      )
-      .populate('createdBy', 'fullName email')
-      .populate('approvedBy', 'fullName email')
-      .exec();
-
-    if (!updated) {
-      throw new NotFoundException(`Операционный платеж с ID ${id} не найден`);
-    }
-
-    // Log activity
-    await this.activityLogsService.log({
-      entityType: 'OPERATIONAL_PAYMENT',
-      entityId: id,
-      action: 'paid',
-      message: `Операционный платеж ${payment.paymentNumber} оплачен`,
-      userId,
-    });
-
-    // Emit socket event
-    this.socketGateway.emitToAll('paymentPaid', updated);
-
-    return updated;
-  }
-
-  async cancel(id: string, userId: string): Promise<OperationalPayment> {
-    const payment = await this.findOne(id);
-
-    if (payment.status === PaymentStatus.PAID) {
-      throw new BadRequestException('Нельзя отменить оплаченный платеж');
-    }
-
-    const updated = await this.operationalPaymentModel
-      .findByIdAndUpdate(
-        id,
-        { status: PaymentStatus.CANCELLED },
-        { new: true },
-      )
-      .populate('createdBy', 'fullName email')
-      .exec();
-
-    if (!updated) {
-      throw new NotFoundException(`Операционный платеж с ID ${id} не найден`);
-    }
-
-    // Log activity
-    await this.activityLogsService.log({
-      entityType: 'OPERATIONAL_PAYMENT',
-      entityId: id,
-      action: 'cancelled',
-      message: `Операционный платеж ${payment.paymentNumber} отменен`,
-      userId,
-    });
-
-    // Emit socket event
-    this.socketGateway.emitToAll('paymentCancelled', updated);
+    this.socketGateway.emitToAll('paymentUpdated', updated);
 
     return updated;
   }

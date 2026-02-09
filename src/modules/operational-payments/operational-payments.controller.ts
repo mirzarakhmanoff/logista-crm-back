@@ -21,9 +21,6 @@ import { OperationalPaymentsService } from './operational-payments.service';
 import { CreateOperationalPaymentDto } from './dto/create-operational-payment.dto';
 import { UpdateOperationalPaymentDto } from './dto/update-operational-payment.dto';
 import { FilterOperationalPaymentDto } from './dto/filter-operational-payment.dto';
-import { ApprovePaymentDto } from './dto/approve-payment.dto';
-import { RejectPaymentDto } from './dto/reject-payment.dto';
-import { MarkPaidDto } from './dto/mark-paid.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserRole } from '../users/schemas/user.schema';
@@ -106,52 +103,6 @@ export class OperationalPaymentsController {
     @CurrentUser() user: any,
   ) {
     return this.operationalPaymentsService.update(id, updateDto, files || [], user.userId);
-  }
-
-  @Post(':id/submit')
-  @Roles(UserRole.ADMIN, UserRole.ACCOUNTANT, UserRole.DIRECTOR, UserRole.MANAGER)
-  async submitForApproval(@Param('id') id: string, @CurrentUser() user: any) {
-    return this.operationalPaymentsService.submitForApproval(id, user.userId);
-  }
-
-  @Post(':id/approve')
-  @Roles(UserRole.ADMIN, UserRole.ACCOUNTANT, UserRole.DIRECTOR)
-  async approve(
-    @Param('id') id: string,
-    @Body() approveDto: ApprovePaymentDto,
-    @CurrentUser() user: any,
-  ) {
-    return this.operationalPaymentsService.approve(id, approveDto, user.userId);
-  }
-
-  @Post(':id/reject')
-  @Roles(UserRole.ADMIN, UserRole.ACCOUNTANT, UserRole.DIRECTOR)
-  async reject(
-    @Param('id') id: string,
-    @Body() rejectDto: RejectPaymentDto,
-    @CurrentUser() user: any,
-  ) {
-    return this.operationalPaymentsService.reject(id, rejectDto, user.userId);
-  }
-
-  @Post(':id/mark-paid')
-  @Roles(UserRole.ADMIN, UserRole.ACCOUNTANT, UserRole.DIRECTOR)
-  async markAsPaid(
-    @Param('id') id: string,
-    @Body() markPaidDto: MarkPaidDto,
-    @CurrentUser() user: any,
-  ) {
-    return this.operationalPaymentsService.markAsPaid(
-      id,
-      markPaidDto,
-      user.userId,
-    );
-  }
-
-  @Post(':id/cancel')
-  @Roles(UserRole.ADMIN, UserRole.DIRECTOR)
-  async cancel(@Param('id') id: string, @CurrentUser() user: any) {
-    return this.operationalPaymentsService.cancel(id, user.userId);
   }
 
   @Post(':id/files')

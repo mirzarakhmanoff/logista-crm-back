@@ -1,4 +1,5 @@
-import { IsString, IsNumber, IsDateString, IsOptional, IsBoolean, Min } from 'class-validator';
+import { IsString, IsNumber, IsDateString, IsOptional, IsBoolean, IsEnum, Min } from 'class-validator';
+import { PaymentStatus } from '../enums/payment-status.enum';
 
 export class UpdateOperationalPaymentDto {
   @IsOptional()
@@ -21,6 +22,26 @@ export class UpdateOperationalPaymentDto {
   @IsOptional()
   @IsString()
   currency?: string;
+
+  @IsOptional()
+  @IsEnum(PaymentStatus)
+  status?: PaymentStatus;
+
+  @IsOptional()
+  @IsString()
+  rejectionReason?: string;
+
+  @IsOptional()
+  @IsString()
+  paymentMethod?: string;
+
+  @IsOptional()
+  @IsString()
+  paymentReference?: string;
+
+  @IsOptional()
+  @IsDateString()
+  paidAt?: string;
 
   @IsOptional()
   @IsString()
