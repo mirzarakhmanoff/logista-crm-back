@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsMongoId, IsDateString, IsOptional, IsBoolean, Min } from 'class-validator';
+import { IsString, IsNumber, IsDateString, IsOptional, IsBoolean, Min } from 'class-validator';
 
 export class CreateOperationalPaymentDto {
   @IsDateString()
@@ -17,9 +17,6 @@ export class CreateOperationalPaymentDto {
   @IsOptional()
   @IsString()
   currency?: string;
-
-  @IsMongoId()
-  responsibleId: string;
 
   @IsOptional()
   @IsString()

@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsMongoId, IsDateString, IsOptional, IsBoolean, Min } from 'class-validator';
+import { IsString, IsNumber, IsDateString, IsOptional, IsBoolean, Min } from 'class-validator';
 
 export class UpdateOperationalPaymentDto {
   @IsOptional()
@@ -21,10 +21,6 @@ export class UpdateOperationalPaymentDto {
   @IsOptional()
   @IsString()
   currency?: string;
-
-  @IsOptional()
-  @IsMongoId()
-  responsibleId?: string;
 
   @IsOptional()
   @IsString()

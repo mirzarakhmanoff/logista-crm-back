@@ -48,7 +48,6 @@ export class OperationalPaymentsService {
       paymentNumber,
       status: PaymentStatus.DRAFT,
       createdBy: new Types.ObjectId(createdById),
-      responsibleId: new Types.ObjectId(createDto.responsibleId),
       currency: createDto.currency || 'RUB',
       files: filesData,
     });
@@ -74,7 +73,6 @@ export class OperationalPaymentsService {
     const {
       status,
       category,
-      responsibleId,
       isCritical,
       search,
       startDate,
@@ -91,10 +89,6 @@ export class OperationalPaymentsService {
 
     if (category) {
       query.counterpartyCategory = category;
-    }
-
-    if (responsibleId) {
-      query.responsibleId = new Types.ObjectId(responsibleId);
     }
 
     if (isCritical !== undefined) {
@@ -124,7 +118,6 @@ export class OperationalPaymentsService {
     const [data, total] = await Promise.all([
       this.operationalPaymentModel
         .find(query)
-        .populate('responsibleId', 'fullName email avatar')
         .populate('createdBy', 'fullName email')
         .populate('approvedBy', 'fullName email')
         .populate('rejectedBy', 'fullName email')
@@ -147,7 +140,6 @@ export class OperationalPaymentsService {
   async findOne(id: string): Promise<OperationalPayment> {
     const payment = await this.operationalPaymentModel
       .findById(id)
-      .populate('responsibleId', 'fullName email avatar')
       .populate('createdBy', 'fullName email')
       .populate('approvedBy', 'fullName email')
       .populate('rejectedBy', 'fullName email')
@@ -186,10 +178,6 @@ export class OperationalPaymentsService {
 
     const updateData: any = { ...updateDto };
 
-    if (updateDto.responsibleId) {
-      updateData.responsibleId = new Types.ObjectId(updateDto.responsibleId);
-    }
-
     // Add new files to existing ones
     if (files && files.length > 0) {
       const newFiles = files.map((file) => ({
@@ -205,7 +193,6 @@ export class OperationalPaymentsService {
 
     const updated = await this.operationalPaymentModel
       .findByIdAndUpdate(id, updateData, { new: true })
-      .populate('responsibleId', 'fullName email avatar')
       .populate('createdBy', 'fullName email')
       .populate('approvedBy', 'fullName email')
       .exec();
@@ -244,7 +231,6 @@ export class OperationalPaymentsService {
         { status: PaymentStatus.PENDING_APPROVAL },
         { new: true },
       )
-      .populate('responsibleId', 'fullName email avatar')
       .populate('createdBy', 'fullName email')
       .exec();
 
@@ -292,7 +278,6 @@ export class OperationalPaymentsService {
 
     const updated = await this.operationalPaymentModel
       .findByIdAndUpdate(id, updateData, { new: true })
-      .populate('responsibleId', 'fullName email avatar')
       .populate('createdBy', 'fullName email')
       .populate('approvedBy', 'fullName email')
       .exec();
@@ -340,7 +325,6 @@ export class OperationalPaymentsService {
         },
         { new: true },
       )
-      .populate('responsibleId', 'fullName email avatar')
       .populate('createdBy', 'fullName email')
       .populate('rejectedBy', 'fullName email')
       .exec();
@@ -388,7 +372,6 @@ export class OperationalPaymentsService {
         },
         { new: true },
       )
-      .populate('responsibleId', 'fullName email avatar')
       .populate('createdBy', 'fullName email')
       .populate('approvedBy', 'fullName email')
       .exec();
@@ -425,7 +408,6 @@ export class OperationalPaymentsService {
         { status: PaymentStatus.CANCELLED },
         { new: true },
       )
-      .populate('responsibleId', 'fullName email avatar')
       .populate('createdBy', 'fullName email')
       .exec();
 

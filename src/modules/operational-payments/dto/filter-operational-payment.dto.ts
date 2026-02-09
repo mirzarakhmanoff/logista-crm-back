@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsEnum, IsNumber, IsMongoId, Min, IsBoolean } from 'class-validator';
+import { IsOptional, IsString, IsEnum, IsNumber, Min, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PaymentStatus } from '../enums/payment-status.enum';
 
@@ -10,10 +10,6 @@ export class FilterOperationalPaymentDto {
   @IsOptional()
   @IsString()
   category?: string;
-
-  @IsOptional()
-  @IsMongoId()
-  responsibleId?: string;
 
   @IsOptional()
   @IsBoolean()

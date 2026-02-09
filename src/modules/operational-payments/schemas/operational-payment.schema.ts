@@ -50,9 +50,6 @@ export class OperationalPayment extends Document {
   @Prop({ default: false })
   isCritical: boolean;
 
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
-  responsibleId: Types.ObjectId;
-
   @Prop({ type: Types.ObjectId, ref: 'User' })
   approvedBy: Types.ObjectId;
 
@@ -104,7 +101,6 @@ export const OperationalPaymentSchema = SchemaFactory.createForClass(Operational
 // Indexes for optimized queries
 OperationalPaymentSchema.index({ paymentNumber: 1 });
 OperationalPaymentSchema.index({ status: 1, createdAt: -1 });
-OperationalPaymentSchema.index({ responsibleId: 1, createdAt: -1 });
 OperationalPaymentSchema.index({ isCritical: 1, status: 1 });
 OperationalPaymentSchema.index({ isArchived: 1 });
 OperationalPaymentSchema.index({ date: -1 });
