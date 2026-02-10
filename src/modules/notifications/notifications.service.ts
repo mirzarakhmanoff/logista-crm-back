@@ -39,15 +39,16 @@ export class NotificationsService {
   async findAll(
     userId: string,
     filterDto: FilterNotificationDto,
-  ): Promise<{ data: Notification[]; total: number; page: number; limit: number; unreadCount: number }> {
+  ): Promise<{ data: any[]; total: number; page: number; limit: number; unreadCount: number }> {
     const page = filterDto.page || 1;
     const limit = filterDto.limit || 20;
     const skip = (page - 1) * limit;
+    const userObjectId = new Types.ObjectId(userId);
 
     const query: any = {};
 
     if (filterDto.unreadOnly) {
-      query.readBy = { $ne: new Types.ObjectId(userId) };
+      query.readBy = { $ne: userObjectId };
     }
 
     const [data, total, unreadCount] = await Promise.all([
@@ -57,14 +58,23 @@ export class NotificationsService {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
+        .lean()
         .exec(),
       this.notificationModel.countDocuments(query),
       this.notificationModel.countDocuments({
-        readBy: { $ne: new Types.ObjectId(userId) },
+        readBy: { $ne: userObjectId },
       }),
     ]);
 
-    return { data, total, page, limit, unreadCount };
+    const mapped = data.map((n) => {
+      const { readBy, ...rest } = n;
+      return {
+        ...rest,
+        isRead: (readBy || []).some((id: Types.ObjectId) => id.equals(userObjectId)),
+      };
+    });
+
+    return { data: mapped, total, page, limit, unreadCount };
   }
 
   async getUnreadCount(userId: string): Promise<number> {
@@ -73,7 +83,7 @@ export class NotificationsService {
     });
   }
 
-  async markAsRead(notificationId: string, userId: string): Promise<Notification> {
+  async markAsRead(notificationId: string, userId: string): Promise<any> {
     const notification = await this.notificationModel
       .findByIdAndUpdate(
         notificationId,
@@ -81,9 +91,16 @@ export class NotificationsService {
         { new: true },
       )
       .populate('createdBy', 'fullName email avatar')
+      .lean()
       .exec();
 
-    return notification!;
+    if (!notification) return null;
+
+    const { readBy, ...rest } = notification;
+    return {
+      ...rest,
+      isRead: true,
+    };
   }
 
   async markAllAsRead(userId: string): Promise<void> {
