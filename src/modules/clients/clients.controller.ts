@@ -19,8 +19,7 @@ import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { FilterClientDto } from './dto/filter-client.dto';
 import { ClientType } from './schemas/client.schema';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { UserRole } from '../users/schemas/user.schema';
+import { Permissions } from '../../common/decorators/permissions.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { RequestsService } from '../requests/requests.service';
 
@@ -34,7 +33,7 @@ export class ClientsController {
   ) {}
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR)
+  @Permissions('clients.create')
   async create(
     @Body() createClientDto: CreateClientDto,
     @CurrentUser() user: any,
@@ -69,7 +68,7 @@ export class ClientsController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR)
+  @Permissions('clients.update')
   async update(
     @Param('id') id: string,
     @Body() updateClientDto: UpdateClientDto,
@@ -79,7 +78,7 @@ export class ClientsController {
   }
 
   @Post(':id/avatar')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR)
+  @Permissions('clients.update')
   @UseInterceptors(FileInterceptor('avatar'))
   @ApiConsumes('multipart/form-data')
   async uploadAvatar(
@@ -90,13 +89,13 @@ export class ClientsController {
   }
 
   @Delete(':id/avatar')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR)
+  @Permissions('clients.update')
   async removeAvatar(@Param('id') id: string) {
     return this.clientsService.removeAvatar(id);
   }
 
   @Delete(':id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Permissions('clients.delete')
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string) {
     await this.clientsService.remove(id);

@@ -19,7 +19,7 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InviteUserDto } from './dto/invite-user.dto';
-import { Roles } from '../../common/decorators/roles.decorator';
+import { Permissions } from '../../common/decorators/permissions.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserRole } from './schemas/user.schema';
 
@@ -30,7 +30,7 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.DIRECTOR)
+  @Permissions('users.create')
   @ApiOperation({ summary: 'Create a new user directly (Admin/Director only)' })
   @ApiResponse({ status: 201, description: 'User created successfully' })
   @ApiResponse({ status: 409, description: 'Email already exists' })
@@ -41,7 +41,7 @@ export class UsersController {
   }
 
   @Post('invite')
-  @Roles(UserRole.ADMIN, UserRole.DIRECTOR)
+  @Permissions('users.create')
   @ApiOperation({
     summary: 'Invite a new user (Admin creates Director, Director creates others)',
   })
@@ -56,7 +56,7 @@ export class UsersController {
   }
 
   @Post(':id/resend-invitation')
-  @Roles(UserRole.ADMIN, UserRole.DIRECTOR)
+  @Permissions('users.update')
   @ApiOperation({ summary: 'Resend invitation email' })
   @ApiResponse({ status: 200, description: 'Invitation resent successfully' })
   async resendInvitation(
@@ -74,7 +74,7 @@ export class UsersController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.DIRECTOR)
+  @Permissions('users.read')
   @ApiOperation({ summary: 'Get all users (Admin/Director only)' })
   @ApiResponse({ status: 200, description: 'List of all users' })
   async findAll() {
@@ -82,21 +82,21 @@ export class UsersController {
   }
 
   @Get('stats/invitations')
-  @Roles(UserRole.ADMIN, UserRole.DIRECTOR)
+  @Permissions('users.read')
   @ApiOperation({ summary: 'Get invitation statistics' })
   async getInvitationStats() {
     return this.usersService.getInvitationStats();
   }
 
   @Get('role/:role')
-  @Roles(UserRole.ADMIN, UserRole.DIRECTOR)
+  @Permissions('users.read')
   @ApiOperation({ summary: 'Get users by role' })
   async findByRole(@Param('role') role: UserRole) {
     return this.usersService.findByRole(role);
   }
 
   @Get(':id')
-  @Roles(UserRole.ADMIN, UserRole.DIRECTOR)
+  @Permissions('users.read')
   @ApiOperation({ summary: 'Get user by ID (Admin/Director only)' })
   @ApiResponse({ status: 200, description: 'User details' })
   @ApiResponse({ status: 404, description: 'User not found' })
@@ -107,7 +107,7 @@ export class UsersController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.DIRECTOR)
+  @Permissions('users.update')
   @ApiOperation({ summary: 'Update user by ID (Admin/Director only)' })
   @ApiResponse({ status: 200, description: 'User updated successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
@@ -117,7 +117,7 @@ export class UsersController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.ADMIN, UserRole.DIRECTOR)
+  @Permissions('users.delete')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete user by ID (Admin/Director only)' })
   @ApiResponse({ status: 204, description: 'User deleted successfully' })

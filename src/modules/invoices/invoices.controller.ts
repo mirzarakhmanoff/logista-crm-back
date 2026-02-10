@@ -14,8 +14,7 @@ import { InvoicesService } from './invoices.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { UpdateInvoiceDto } from './dto/update-invoice.dto';
 import { PayInvoiceDto } from './dto/pay-invoice.dto';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { UserRole } from '../users/schemas/user.schema';
+import { Permissions } from '../../common/decorators/permissions.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Invoices')
@@ -25,7 +24,7 @@ export class InvoicesController {
   constructor(private readonly invoicesService: InvoicesService) {}
 
   @Post('requests/:requestId/invoices')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT)
+  @Permissions('invoices.create')
   async create(
     @Param('requestId') requestId: string,
     @Body() createDto: Omit<CreateInvoiceDto, 'requestId'>,
@@ -53,7 +52,7 @@ export class InvoicesController {
   }
 
   @Patch('invoices/:id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT)
+  @Permissions('invoices.update')
   async update(
     @Param('id') id: string,
     @Body() updateDto: UpdateInvoiceDto,
@@ -63,7 +62,7 @@ export class InvoicesController {
   }
 
   @Patch('invoices/:id/pay')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT)
+  @Permissions('invoices.update')
   async pay(
     @Param('id') id: string,
     @Body() payDto: PayInvoiceDto,
@@ -73,7 +72,7 @@ export class InvoicesController {
   }
 
   @Delete('invoices/:id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Permissions('invoices.delete')
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string) {
     await this.invoicesService.remove(id);

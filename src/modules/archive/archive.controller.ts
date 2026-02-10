@@ -23,8 +23,7 @@ import {
   BulkArchiveDto,
 } from './dto/archive-query.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { UserRole } from '../users/schemas/user.schema';
+import { Permissions } from '../../common/decorators/permissions.decorator';
 
 @ApiTags('Archive')
 @ApiBearerAuth()
@@ -56,6 +55,7 @@ export class ArchiveController {
   }
 
   @Post(':category/:id')
+  @Permissions('archive.update')
   @ApiOperation({ summary: 'Archive an item' })
   @ApiParam({ name: 'category', enum: ArchiveCategory })
   @ApiParam({ name: 'id', description: 'Item ID to archive' })
@@ -68,6 +68,7 @@ export class ArchiveController {
   }
 
   @Post(':category/:id/restore')
+  @Permissions('archive.update')
   @ApiOperation({ summary: 'Restore an archived item' })
   @ApiParam({ name: 'category', enum: ArchiveCategory })
   @ApiParam({ name: 'id', description: 'Item ID to restore' })
@@ -79,6 +80,7 @@ export class ArchiveController {
   }
 
   @Post('bulk/archive')
+  @Permissions('archive.update')
   @ApiOperation({ summary: 'Archive multiple items at once' })
   @ApiBody({ type: BulkArchiveDto })
   async bulkArchive(
@@ -89,6 +91,7 @@ export class ArchiveController {
   }
 
   @Post('bulk/restore')
+  @Permissions('archive.update')
   @ApiOperation({ summary: 'Restore multiple items at once' })
   @ApiBody({ type: BulkArchiveDto })
   async bulkRestore(@Body() dto: BulkArchiveDto) {
@@ -96,7 +99,7 @@ export class ArchiveController {
   }
 
   @Delete(':category/:id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Permissions('archive.delete')
   @ApiOperation({ summary: 'Permanently delete an archived item (Admin/Manager only)' })
   @ApiParam({ name: 'category', enum: ArchiveCategory })
   @ApiParam({ name: 'id', description: 'Item ID to permanently delete' })

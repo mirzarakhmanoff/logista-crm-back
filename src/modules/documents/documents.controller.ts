@@ -30,8 +30,7 @@ import { CreateDocumentDto } from './dto/create-document.dto';
 import { UpdateDocumentDto } from './dto/update-document.dto';
 import { FilterDocumentDto } from './dto/filter-document.dto';
 import { UpdateDocumentStatusDto } from './dto/update-status.dto';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { UserRole } from '../users/schemas/user.schema';
+import { Permissions } from '../../common/decorators/permissions.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { DocumentStatus } from './schemas/document.schema';
 
@@ -42,7 +41,7 @@ export class DocumentsController {
   constructor(private readonly documentsService: DocumentsService) {}
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT)
+  @Permissions('documents.create')
   @ApiOperation({ summary: 'Create a new document' })
   @ApiResponse({
     status: 201,
@@ -100,7 +99,7 @@ export class DocumentsController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT)
+  @Permissions('documents.update')
   @ApiOperation({ summary: 'Update document by ID' })
   @ApiResponse({
     status: 200,
@@ -119,7 +118,7 @@ export class DocumentsController {
   }
 
   @Patch(':id/status')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT)
+  @Permissions('documents.update')
   @ApiOperation({ summary: 'Update document status' })
   @ApiResponse({
     status: 200,
@@ -134,7 +133,7 @@ export class DocumentsController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Permissions('documents.delete')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete document by ID (Admin/Manager only)' })
   @ApiResponse({
@@ -150,7 +149,7 @@ export class DocumentsController {
   }
 
   @Post(':id/files')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT)
+  @Permissions('documents.create')
   @UseInterceptors(AnyFilesInterceptor())
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload file(s) to document' })
@@ -218,7 +217,7 @@ export class DocumentsController {
   }
 
   @Delete(':id/files/:fileId')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT)
+  @Permissions('documents.delete')
   @ApiOperation({ summary: 'Delete file from document' })
   @ApiResponse({
     status: 200,
@@ -268,7 +267,7 @@ export class DocumentsController {
   }
 
   @Post(':id/activities/comments')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT)
+  @Permissions('documents.create')
   @ApiOperation({ summary: 'Add comment to document' })
   @ApiBody({
     schema: {

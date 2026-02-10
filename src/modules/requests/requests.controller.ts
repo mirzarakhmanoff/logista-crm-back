@@ -25,8 +25,7 @@ import { FilterRequestDto } from './dto/filter-request.dto';
 import { MoveRequestDto } from './dto/move-request.dto';
 import { AddCommentDto } from './dto/add-comment.dto';
 import { RequestType } from './schemas/request.schema';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { UserRole } from '../users/schemas/user.schema';
+import { Permissions } from '../../common/decorators/permissions.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Requests')
@@ -36,7 +35,7 @@ export class RequestsController {
   constructor(private readonly requestsService: RequestsService) {}
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR)
+  @Permissions('requests.create')
   async create(
     @Body() createDto: CreateRequestDto,
     @CurrentUser() user: any,
@@ -65,7 +64,7 @@ export class RequestsController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR)
+  @Permissions('requests.update')
   async update(
     @Param('id') id: string,
     @Body() updateDto: UpdateRequestDto,
@@ -75,7 +74,7 @@ export class RequestsController {
   }
 
   @Patch(':id/status')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR)
+  @Permissions('requests.update')
   async updateStatus(
     @Param('id') id: string,
     @Body() updateStatusDto: UpdateRequestStatusDto,
@@ -85,7 +84,7 @@ export class RequestsController {
   }
 
   @Patch(':id/move')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR)
+  @Permissions('requests.update')
   async moveRequest(
     @Param('id') id: string,
     @Body() moveDto: MoveRequestDto,
@@ -95,7 +94,7 @@ export class RequestsController {
   }
 
   @Post(':id/comments')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR)
+  @Permissions('requests.create')
   async addComment(
     @Param('id') id: string,
     @Body() addCommentDto: AddCommentDto,
@@ -110,7 +109,7 @@ export class RequestsController {
   }
 
   @Post(':id/files')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR)
+  @Permissions('requests.create')
   @UseInterceptors(AnyFilesInterceptor())
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -172,7 +171,7 @@ export class RequestsController {
   }
 
   @Delete(':id/files/:fileId')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR)
+  @Permissions('requests.delete')
   async deleteFile(
     @Param('id') id: string,
     @Param('fileId') fileId: string,
@@ -182,7 +181,7 @@ export class RequestsController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Permissions('requests.delete')
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string) {
     await this.requestsService.remove(id);

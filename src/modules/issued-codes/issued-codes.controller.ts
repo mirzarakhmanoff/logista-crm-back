@@ -13,8 +13,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { IssuedCodesService } from './issued-codes.service';
 import { CreateIssuedCodeDto } from './dto/create-issued-code.dto';
 import { UpdateIssuedCodeDto } from './dto/update-issued-code.dto';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { UserRole } from '../users/schemas/user.schema';
+import { Permissions } from '../../common/decorators/permissions.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Issued Codes')
@@ -24,7 +23,7 @@ export class IssuedCodesController {
   constructor(private readonly issuedCodesService: IssuedCodesService) {}
 
   @Post('requests/:requestId/codes')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR)
+  @Permissions('issued-codes.create')
   async create(
     @Param('requestId') requestId: string,
     @Body() createDto: Omit<CreateIssuedCodeDto, 'requestId'>,
@@ -57,7 +56,7 @@ export class IssuedCodesController {
   }
 
   @Patch('codes/:id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR)
+  @Permissions('issued-codes.update')
   async update(
     @Param('id') id: string,
     @Body() updateDto: UpdateIssuedCodeDto,
@@ -67,7 +66,7 @@ export class IssuedCodesController {
   }
 
   @Delete('codes/:id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Permissions('issued-codes.delete')
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string) {
     await this.issuedCodesService.remove(id);

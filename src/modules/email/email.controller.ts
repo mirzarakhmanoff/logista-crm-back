@@ -32,10 +32,9 @@ import { SendEmailDto } from './dto/send-email.dto';
 import { ReplyEmailDto } from './dto/reply-email.dto';
 import { FilterEmailDto } from './dto/filter-email.dto';
 import { LinkEmailDto } from './dto/link-email.dto';
-import { Roles } from '../../common/decorators/roles.decorator';
+import { Permissions } from '../../common/decorators/permissions.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { UserRole } from '../users/schemas/user.schema';
 
 @ApiTags('Email')
 @ApiBearerAuth('JWT')
@@ -46,7 +45,7 @@ export class EmailController {
   // ==================== ACCOUNT ENDPOINTS ====================
 
   @Post('accounts')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Permissions('email.create')
   @ApiOperation({ summary: 'Yangi email akkaunt qo\'shish' })
   @ApiResponse({ status: 201, description: 'Akkaunt yaratildi' })
   async createAccount(
@@ -72,7 +71,7 @@ export class EmailController {
   }
 
   @Patch('accounts/:id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Permissions('email.update')
   @ApiOperation({ summary: 'Email akkauntni yangilash' })
   @ApiParam({ name: 'id', description: 'Account ID' })
   async updateAccount(
@@ -83,7 +82,7 @@ export class EmailController {
   }
 
   @Delete('accounts/:id')
-  @Roles(UserRole.ADMIN)
+  @Permissions('email.delete')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Email akkauntni o\'chirish (barcha xatlar bilan)',
@@ -94,7 +93,7 @@ export class EmailController {
   }
 
   @Post('accounts/:id/test')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Permissions('email.update')
   @ApiOperation({ summary: 'IMAP/SMTP ulanishni tekshirish' })
   @ApiParam({ name: 'id', description: 'Account ID' })
   async testConnection(@Param('id') id: string) {
@@ -102,7 +101,7 @@ export class EmailController {
   }
 
   @Post('accounts/:id/sync')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Permissions('email.update')
   @ApiOperation({ summary: 'Akkauntni qo\'lda sinxronlashtirish' })
   @ApiParam({ name: 'id', description: 'Account ID' })
   async triggerSync(@Param('id') id: string) {
@@ -112,7 +111,7 @@ export class EmailController {
   // ==================== GMAIL OAUTH2 ====================
 
   @Get('oauth/google/url')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Permissions('email.create')
   @ApiOperation({ summary: 'Google OAuth2 ruxsat URL olish' })
   @ApiResponse({ status: 200, description: 'OAuth2 URL' })
   async getGoogleAuthUrl(@CurrentUser() user: any) {
@@ -162,7 +161,7 @@ export class EmailController {
   }
 
   @Post('messages/send')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR)
+  @Permissions('email.create')
   @ApiOperation({ summary: 'Yangi xat jo\'natish' })
   @ApiResponse({ status: 201, description: 'Xat jo\'natildi' })
   async sendEmail(
@@ -173,7 +172,7 @@ export class EmailController {
   }
 
   @Post('messages/send-with-attachments')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR)
+  @Permissions('email.create')
   @UseInterceptors(AnyFilesInterceptor())
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Fayllar bilan xat jo\'natish' })
@@ -191,7 +190,7 @@ export class EmailController {
   }
 
   @Post('messages/reply')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR)
+  @Permissions('email.create')
   @ApiOperation({ summary: 'Xatga javob yozish' })
   @ApiResponse({ status: 201, description: 'Javob jo\'natildi' })
   async replyToEmail(
@@ -204,7 +203,7 @@ export class EmailController {
   // ==================== CRM LINKING ====================
 
   @Post('messages/:id/link')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR)
+  @Permissions('email.update')
   @ApiOperation({
     summary: 'Xatni CRM obyektiga bog\'lash (client yoki request)',
   })
@@ -217,7 +216,7 @@ export class EmailController {
   }
 
   @Delete('messages/:id/link/:entityType/:entityId')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR)
+  @Permissions('email.update')
   @ApiOperation({ summary: 'Xatni CRM obyektidan uzish' })
   @ApiParam({ name: 'id', description: 'Message ID' })
   @ApiParam({ name: 'entityType', description: 'CLIENT yoki REQUEST' })
@@ -292,7 +291,7 @@ export class EmailController {
   }
 
   @Delete('messages/:id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Permissions('email.delete')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Xatni o\'chirish' })
   @ApiParam({ name: 'id', description: 'Message ID' })

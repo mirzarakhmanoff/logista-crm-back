@@ -13,8 +13,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { RateQuotesService } from './rate-quotes.service';
 import { CreateRateQuoteDto } from './dto/create-rate-quote.dto';
 import { UpdateRateQuoteDto } from './dto/update-rate-quote.dto';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { UserRole } from '../users/schemas/user.schema';
+import { Permissions } from '../../common/decorators/permissions.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Rate Quotes')
@@ -24,7 +23,7 @@ export class RateQuotesController {
   constructor(private readonly rateQuotesService: RateQuotesService) {}
 
   @Post('requests/:requestId/quotes')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR)
+  @Permissions('rate-quotes.create')
   async create(
     @Param('requestId') requestId: string,
     @Body() createDto: Omit<CreateRateQuoteDto, 'requestId'>,
@@ -47,7 +46,7 @@ export class RateQuotesController {
   }
 
   @Patch('quotes/:id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR)
+  @Permissions('rate-quotes.update')
   async update(
     @Param('id') id: string,
     @Body() updateDto: UpdateRateQuoteDto,
@@ -57,7 +56,7 @@ export class RateQuotesController {
   }
 
   @Delete('quotes/:id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Permissions('rate-quotes.delete')
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string) {
     await this.rateQuotesService.remove(id);

@@ -21,9 +21,8 @@ import { OperationalPaymentsService } from './operational-payments.service';
 import { CreateOperationalPaymentDto } from './dto/create-operational-payment.dto';
 import { UpdateOperationalPaymentDto } from './dto/update-operational-payment.dto';
 import { FilterOperationalPaymentDto } from './dto/filter-operational-payment.dto';
-import { Roles } from '../../common/decorators/roles.decorator';
+import { Permissions } from '../../common/decorators/permissions.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { UserRole } from '../users/schemas/user.schema';
 
 @ApiTags('Operational Payments')
 @ApiBearerAuth()
@@ -34,7 +33,7 @@ export class OperationalPaymentsController {
   ) {}
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.ACCOUNTANT, UserRole.DIRECTOR, UserRole.MANAGER)
+  @Permissions('operational-payments.create')
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
     FilesInterceptor('files', 10, {
@@ -77,7 +76,7 @@ export class OperationalPaymentsController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.ACCOUNTANT, UserRole.DIRECTOR, UserRole.MANAGER)
+  @Permissions('operational-payments.update')
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
     FilesInterceptor('files', 10, {
@@ -106,7 +105,7 @@ export class OperationalPaymentsController {
   }
 
   @Post(':id/files')
-  @Roles(UserRole.ADMIN, UserRole.ACCOUNTANT, UserRole.DIRECTOR, UserRole.MANAGER)
+  @Permissions('operational-payments.create')
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
     FileInterceptor('file', {
@@ -134,7 +133,7 @@ export class OperationalPaymentsController {
   }
 
   @Delete(':id/files/:fileId')
-  @Roles(UserRole.ADMIN, UserRole.ACCOUNTANT, UserRole.DIRECTOR)
+  @Permissions('operational-payments.delete')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteFile(
     @Param('id') id: string,
@@ -145,7 +144,7 @@ export class OperationalPaymentsController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.ADMIN, UserRole.DIRECTOR)
+  @Permissions('operational-payments.delete')
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string, @CurrentUser() user: any) {
     await this.operationalPaymentsService.remove(id, user.userId);

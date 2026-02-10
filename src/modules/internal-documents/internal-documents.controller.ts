@@ -31,8 +31,7 @@ import { CreateInternalDocumentDto } from './dto/create-internal-document.dto';
 import { UpdateInternalDocumentDto } from './dto/update-internal-document.dto';
 import { FilterInternalDocumentDto } from './dto/filter-internal-document.dto';
 import { UpdateInternalDocumentStatusDto } from './dto/update-internal-document-status.dto';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { UserRole } from '../users/schemas/user.schema';
+import { Permissions } from '../../common/decorators/permissions.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Internal Documents')
@@ -44,7 +43,7 @@ export class InternalDocumentsController {
   // ==================== CATEGORIES ====================
 
   @Post('categories')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT)
+  @Permissions('internal-documents.create')
   @ApiOperation({ summary: 'Create a document category' })
   @ApiResponse({ status: 201, description: 'Category created successfully' })
   async createCategory(
@@ -69,7 +68,7 @@ export class InternalDocumentsController {
   }
 
   @Patch('categories/:id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT)
+  @Permissions('internal-documents.update')
   @ApiOperation({ summary: 'Update category' })
   @ApiResponse({ status: 200, description: 'Category updated successfully' })
   async updateCategory(
@@ -80,7 +79,7 @@ export class InternalDocumentsController {
   }
 
   @Delete('categories/:id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Permissions('internal-documents.delete')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete category' })
   @ApiResponse({ status: 204, description: 'Category deleted successfully' })
@@ -118,7 +117,7 @@ export class InternalDocumentsController {
   // ==================== DOCUMENTS ====================
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT)
+  @Permissions('internal-documents.create')
   @ApiOperation({ summary: 'Create internal document' })
   @ApiResponse({ status: 201, description: 'Document created successfully' })
   async createDocument(
@@ -144,7 +143,7 @@ export class InternalDocumentsController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT)
+  @Permissions('internal-documents.update')
   @ApiOperation({ summary: 'Update internal document' })
   @ApiResponse({ status: 200, description: 'Document updated successfully' })
   async updateDocument(
@@ -156,7 +155,7 @@ export class InternalDocumentsController {
   }
 
   @Patch(':id/status')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT)
+  @Permissions('internal-documents.update')
   @ApiOperation({ summary: 'Update document status' })
   @ApiResponse({ status: 200, description: 'Status updated successfully' })
   async updateDocumentStatus(
@@ -168,7 +167,7 @@ export class InternalDocumentsController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Permissions('internal-documents.delete')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete internal document' })
   @ApiResponse({ status: 204, description: 'Document deleted successfully' })
@@ -179,7 +178,7 @@ export class InternalDocumentsController {
   // ==================== FILE MANAGEMENT ====================
 
   @Post(':id/files')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT)
+  @Permissions('internal-documents.create')
   @UseInterceptors(AnyFilesInterceptor())
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload file(s) to internal document' })
@@ -249,7 +248,7 @@ export class InternalDocumentsController {
   }
 
   @Delete(':id/files/:fileId')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT)
+  @Permissions('internal-documents.delete')
   @ApiOperation({ summary: 'Delete file from internal document' })
   @ApiResponse({ status: 200, description: 'File deleted successfully' })
   async deleteFile(
@@ -270,7 +269,7 @@ export class InternalDocumentsController {
   }
 
   @Post(':id/activities/comments')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT)
+  @Permissions('internal-documents.create')
   @ApiOperation({ summary: 'Add comment to internal document' })
   @ApiBody({
     schema: {

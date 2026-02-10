@@ -13,8 +13,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ShipmentsService } from './shipments.service';
 import { CreateShipmentDto } from './dto/create-shipment.dto';
 import { UpdateShipmentDto } from './dto/update-shipment.dto';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { UserRole } from '../users/schemas/user.schema';
+import { Permissions } from '../../common/decorators/permissions.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Shipments')
@@ -24,7 +23,7 @@ export class ShipmentsController {
   constructor(private readonly shipmentsService: ShipmentsService) {}
 
   @Post('requests/:requestId/shipments')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR)
+  @Permissions('shipments.create')
   async create(
     @Param('requestId') requestId: string,
     @Body() createDto: Omit<CreateShipmentDto, 'requestId'>,
@@ -52,7 +51,7 @@ export class ShipmentsController {
   }
 
   @Patch('shipments/:id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR)
+  @Permissions('shipments.update')
   async update(
     @Param('id') id: string,
     @Body() updateDto: UpdateShipmentDto,
@@ -62,7 +61,7 @@ export class ShipmentsController {
   }
 
   @Delete('shipments/:id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Permissions('shipments.delete')
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string) {
     await this.shipmentsService.remove(id);

@@ -23,6 +23,7 @@ import { InternalDocumentsModule } from './modules/internal-documents/internal-d
 import { PersonnelDocumentsModule } from './modules/personnel-documents/personnel-documents.module';
 import { OperationalPaymentsModule } from './modules/operational-payments/operational-payments.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { PermissionsModule } from './modules/permissions/permissions.module';
 import { SocketModule } from './socket/socket.module';
 import { getDatabaseConfig } from './config/database.config';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -59,6 +60,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     PersonnelDocumentsModule,
     OperationalPaymentsModule,
     NotificationsModule,
+    PermissionsModule,
   ],
   controllers: [AppController],
   providers: [

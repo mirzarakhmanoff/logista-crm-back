@@ -31,8 +31,7 @@ import { CreatePersonnelDocumentDto } from './dto/create-personnel-document.dto'
 import { UpdatePersonnelDocumentDto } from './dto/update-personnel-document.dto';
 import { FilterPersonnelDocumentDto } from './dto/filter-personnel-document.dto';
 import { UpdatePersonnelDocumentStatusDto } from './dto/update-personnel-document-status.dto';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { UserRole } from '../users/schemas/user.schema';
+import { Permissions } from '../../common/decorators/permissions.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Personnel Documents')
@@ -44,7 +43,7 @@ export class PersonnelDocumentsController {
   // ==================== CATEGORIES ====================
 
   @Post('categories')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT)
+  @Permissions('personnel-documents.create')
   @ApiOperation({ summary: 'Create a personnel document category' })
   @ApiResponse({ status: 201, description: 'Category created successfully' })
   async createCategory(
@@ -71,7 +70,7 @@ export class PersonnelDocumentsController {
   }
 
   @Patch('categories/:id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT)
+  @Permissions('personnel-documents.update')
   @ApiOperation({ summary: 'Update category' })
   @ApiResponse({ status: 200, description: 'Category updated successfully' })
   async updateCategory(
@@ -82,7 +81,7 @@ export class PersonnelDocumentsController {
   }
 
   @Delete('categories/:id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Permissions('personnel-documents.delete')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete category' })
   @ApiResponse({ status: 204, description: 'Category deleted successfully' })
@@ -120,7 +119,7 @@ export class PersonnelDocumentsController {
   // ==================== DOCUMENTS ====================
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT)
+  @Permissions('personnel-documents.create')
   @ApiOperation({ summary: 'Create personnel document' })
   @ApiResponse({ status: 201, description: 'Document created successfully' })
   async createDocument(
@@ -146,7 +145,7 @@ export class PersonnelDocumentsController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT)
+  @Permissions('personnel-documents.update')
   @ApiOperation({ summary: 'Update personnel document' })
   @ApiResponse({ status: 200, description: 'Document updated successfully' })
   async updateDocument(
@@ -158,7 +157,7 @@ export class PersonnelDocumentsController {
   }
 
   @Patch(':id/status')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT)
+  @Permissions('personnel-documents.update')
   @ApiOperation({ summary: 'Update document status' })
   @ApiResponse({ status: 200, description: 'Status updated successfully' })
   async updateDocumentStatus(
@@ -170,7 +169,7 @@ export class PersonnelDocumentsController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Permissions('personnel-documents.delete')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete personnel document' })
   @ApiResponse({ status: 204, description: 'Document deleted successfully' })
@@ -181,7 +180,7 @@ export class PersonnelDocumentsController {
   // ==================== FILE MANAGEMENT ====================
 
   @Post(':id/files')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT)
+  @Permissions('personnel-documents.create')
   @UseInterceptors(AnyFilesInterceptor())
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload file(s) to personnel document' })
@@ -251,7 +250,7 @@ export class PersonnelDocumentsController {
   }
 
   @Delete(':id/files/:fileId')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT)
+  @Permissions('personnel-documents.delete')
   @ApiOperation({ summary: 'Delete file from personnel document' })
   @ApiResponse({ status: 200, description: 'File deleted successfully' })
   async deleteFile(
@@ -272,7 +271,7 @@ export class PersonnelDocumentsController {
   }
 
   @Post(':id/activities/comments')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT)
+  @Permissions('personnel-documents.create')
   @ApiOperation({ summary: 'Add comment to personnel document' })
   @ApiBody({
     schema: {
