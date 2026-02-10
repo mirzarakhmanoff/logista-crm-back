@@ -8,6 +8,8 @@ import { PayInvoiceDto } from './dto/pay-invoice.dto';
 import { Request } from '../requests/schemas/request.schema';
 import { SocketGateway } from '../../socket/socket.gateway';
 import { ActivityLogsService } from '../activity-logs/activity-logs.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/schemas/notification.schema';
 
 @Injectable()
 export class InvoicesService {
@@ -16,6 +18,7 @@ export class InvoicesService {
     @InjectModel(Request.name) private requestModel: Model<Request>,
     private socketGateway: SocketGateway,
     private activityLogsService: ActivityLogsService,
+    private notificationsService: NotificationsService,
   ) {}
 
   async create(createDto: CreateInvoiceDto, createdById: string): Promise<Invoice> {
@@ -41,6 +44,15 @@ export class InvoicesService {
     });
 
     this.socketGateway.emitToAll('invoiceCreated', savedInvoice);
+
+    this.notificationsService.create({
+      type: NotificationType.INVOICE_CREATED,
+      title: 'Yangi faktura',
+      message: `Yangi faktura yaratildi: ${createDto.number}`,
+      entityType: 'INVOICE',
+      entityId: savedInvoice._id.toString(),
+      createdBy: createdById,
+    });
 
     return savedInvoice;
   }
@@ -87,6 +99,15 @@ export class InvoicesService {
 
     this.socketGateway.emitToAll('invoiceUpdated', invoice);
 
+    this.notificationsService.create({
+      type: NotificationType.INVOICE_UPDATED,
+      title: 'Faktura yangilandi',
+      message: `Faktura ${invoice.number} yangilandi`,
+      entityType: 'INVOICE',
+      entityId: id,
+      createdBy: userId,
+    });
+
     return invoice;
   }
 
@@ -132,6 +153,15 @@ export class InvoicesService {
     });
 
     this.socketGateway.emitToAll('invoicePaid', populatedInvoice);
+
+    this.notificationsService.create({
+      type: NotificationType.INVOICE_PAID,
+      title: 'Faktura to\'landi',
+      message: `Faktura ${invoice.number} ga ${payDto.amount} ${invoice.currency} to'lov qabul qilindi`,
+      entityType: 'INVOICE',
+      entityId: id,
+      createdBy: userId,
+    });
 
     return populatedInvoice;
   }

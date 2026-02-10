@@ -197,4 +197,12 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     );
     return { event: 'leftEmailAccount', data: accountId };
   }
+
+  // ==================== NOTIFICATION EVENTS ====================
+
+  // Yangi notification yaratilganda
+  emitNewNotification(data: any) {
+    this.emitToAll('newNotification', data);
+    this.logger.log(`New notification: ${data?.title}`);
+  }
 }

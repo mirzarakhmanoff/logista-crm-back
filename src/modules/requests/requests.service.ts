@@ -19,6 +19,8 @@ import { AddCommentDto } from './dto/add-comment.dto';
 import { SocketGateway } from '../../socket/socket.gateway';
 import { ActivityLogsService } from '../activity-logs/activity-logs.service';
 import { ActivityLog } from '../activity-logs/schemas/activity-log.schema';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/schemas/notification.schema';
 
 @Injectable()
 export class RequestsService {
@@ -27,6 +29,7 @@ export class RequestsService {
     @InjectModel(Client.name) private clientModel: Model<Client>,
     private socketGateway: SocketGateway,
     private activityLogsService: ActivityLogsService,
+    private notificationsService: NotificationsService,
   ) {}
 
   private getStatusDefinitions(type: RequestType) {
@@ -137,6 +140,15 @@ export class RequestsService {
     });
 
     this.socketGateway.emitToAll('requestCreated', populatedRequest);
+
+    this.notificationsService.create({
+      type: NotificationType.REQUEST_CREATED,
+      title: 'Yangi zayavka',
+      message: `Yangi zayavka yaratildi: ${populatedRequest.cargoName || populatedRequest.route || ''}`,
+      entityType: 'REQUEST',
+      entityId: savedRequest._id.toString(),
+      createdBy: createdById,
+    });
 
     return populatedRequest;
   }
@@ -251,6 +263,15 @@ export class RequestsService {
 
     this.socketGateway.emitToAll('requestUpdated', request);
 
+    this.notificationsService.create({
+      type: NotificationType.REQUEST_UPDATED,
+      title: 'Zayavka yangilandi',
+      message: `Zayavka yangilandi`,
+      entityType: 'REQUEST',
+      entityId: id,
+      createdBy: userId,
+    });
+
     return request;
   }
 
@@ -295,6 +316,15 @@ export class RequestsService {
       request: populatedRequest,
       fromStatus: oldStatus,
       toStatus: toKey,
+    });
+
+    this.notificationsService.create({
+      type: NotificationType.REQUEST_STATUS_CHANGED,
+      title: 'Zayavka statusi o\'zgardi',
+      message: `Zayavka statusi ${oldStatus} dan ${toKey} ga o'zgardi`,
+      entityType: 'REQUEST',
+      entityId: id,
+      createdBy: userId,
     });
 
     return populatedRequest;
@@ -344,6 +374,17 @@ export class RequestsService {
       fromStatus: oldStatus,
       toStatus: moveDto.toStatusKey,
     });
+
+    if (isStatusChange) {
+      this.notificationsService.create({
+        type: NotificationType.REQUEST_STATUS_CHANGED,
+        title: 'Zayavka statusi o\'zgardi',
+        message: `Zayavka statusi ${oldStatus} dan ${moveDto.toStatusKey} ga o'zgardi`,
+        entityType: 'REQUEST',
+        entityId: id,
+        createdBy: userId,
+      });
+    }
 
     return populatedRequest;
   }

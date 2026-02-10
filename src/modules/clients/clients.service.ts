@@ -15,6 +15,8 @@ import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { FilterClientDto } from './dto/filter-client.dto';
 import { SocketGateway } from '../../socket/socket.gateway';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/schemas/notification.schema';
 
 @Injectable()
 export class ClientsService {
@@ -28,6 +30,7 @@ export class ClientsService {
     @InjectModel(IssuedCode.name) private issuedCodeModel: Model<IssuedCode>,
     @InjectModel(ActivityLog.name) private activityLogModel: Model<ActivityLog>,
     private socketGateway: SocketGateway,
+    private notificationsService: NotificationsService,
   ) {}
 
   private generateClientNumber(type: ClientType = ClientType.CLIENT) {
@@ -59,6 +62,15 @@ export class ClientsService {
     }
 
     this.socketGateway.emitToAll('clientCreated', populatedClient);
+
+    this.notificationsService.create({
+      type: NotificationType.CLIENT_CREATED,
+      title: 'Yangi klient',
+      message: `"${populatedClient.name}" klienti qo'shildi`,
+      entityType: 'CLIENT',
+      entityId: populatedClient._id.toString(),
+      createdBy: createdById,
+    });
 
     return populatedClient;
   }
@@ -111,7 +123,7 @@ export class ClientsService {
     return client;
   }
 
-  async update(id: string, updateClientDto: UpdateClientDto): Promise<Client> {
+  async update(id: string, updateClientDto: UpdateClientDto, updatedById?: string): Promise<Client> {
     const client = await this.clientModel
       .findByIdAndUpdate(id, updateClientDto, { new: true })
       .populate('createdBy', 'fullName email')
@@ -122,6 +134,15 @@ export class ClientsService {
     }
 
     this.socketGateway.emitToAll('clientUpdated', client);
+
+    this.notificationsService.create({
+      type: NotificationType.CLIENT_UPDATED,
+      title: 'Klient yangilandi',
+      message: `"${client.name}" klienti yangilandi`,
+      entityType: 'CLIENT',
+      entityId: id,
+      createdBy: updatedById,
+    });
 
     return client;
   }

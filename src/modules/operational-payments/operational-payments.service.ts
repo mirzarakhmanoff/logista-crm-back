@@ -12,6 +12,8 @@ import { FilterOperationalPaymentDto } from './dto/filter-operational-payment.dt
 import { PaymentStatus } from './enums/payment-status.enum';
 import { ActivityLogsService } from '../activity-logs/activity-logs.service';
 import { SocketGateway } from '../../socket/socket.gateway';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/schemas/notification.schema';
 
 @Injectable()
 export class OperationalPaymentsService {
@@ -20,6 +22,7 @@ export class OperationalPaymentsService {
     private operationalPaymentModel: Model<OperationalPayment>,
     private activityLogsService: ActivityLogsService,
     private socketGateway: SocketGateway,
+    private notificationsService: NotificationsService,
   ) {}
 
   async create(
@@ -61,6 +64,15 @@ export class OperationalPaymentsService {
 
     // Emit socket event
     this.socketGateway.emitToAll('paymentCreated', saved);
+
+    this.notificationsService.create({
+      type: NotificationType.PAYMENT_CREATED,
+      title: 'Yangi to\'lov',
+      message: `Yangi operatsion to'lov yaratildi: ${saved.paymentNumber}`,
+      entityType: 'OPERATIONAL_PAYMENT',
+      entityId: saved._id.toString(),
+      createdBy: createdById,
+    });
 
     return this.findOne(saved._id.toString());
   }
@@ -213,6 +225,17 @@ export class OperationalPaymentsService {
 
     // Emit socket event
     this.socketGateway.emitToAll('paymentUpdated', updated);
+
+    if (updateDto.status) {
+      this.notificationsService.create({
+        type: NotificationType.PAYMENT_STATUS_CHANGED,
+        title: 'To\'lov statusi o\'zgardi',
+        message: `To'lov ${payment.paymentNumber} statusi ${updateDto.status} ga o'zgardi`,
+        entityType: 'OPERATIONAL_PAYMENT',
+        entityId: id,
+        createdBy: userId,
+      });
+    }
 
     return updated;
   }

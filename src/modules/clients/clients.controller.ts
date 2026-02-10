@@ -73,8 +73,9 @@ export class ClientsController {
   async update(
     @Param('id') id: string,
     @Body() updateClientDto: UpdateClientDto,
+    @CurrentUser() user: any,
   ) {
-    return this.clientsService.update(id, updateClientDto);
+    return this.clientsService.update(id, updateClientDto, user.userId);
   }
 
   @Post(':id/avatar')

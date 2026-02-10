@@ -12,6 +12,8 @@ import { FilterDocumentDto } from './dto/filter-document.dto';
 import { UpdateDocumentStatusDto } from './dto/update-status.dto';
 import { ActivityLogsService } from '../activity-logs/activity-logs.service';
 import { SocketGateway } from '../../socket/socket.gateway';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/schemas/notification.schema';
 
 @Injectable()
 export class DocumentsService {
@@ -19,6 +21,7 @@ export class DocumentsService {
     @InjectModel(Document.name) private documentModel: Model<Document>,
     private activityLogsService: ActivityLogsService,
     private socketGateway: SocketGateway,
+    private notificationsService: NotificationsService,
   ) {}
 
   async create(
@@ -55,6 +58,15 @@ export class DocumentsService {
     }
 
     this.socketGateway.emitToAll('documentCreated', populatedDocument);
+
+    this.notificationsService.create({
+      type: NotificationType.DOCUMENT_CREATED,
+      title: 'Yangi hujjat',
+      message: `Yangi hujjat yaratildi: ${populatedDocument.documentNumber}`,
+      entityType: 'DOCUMENT',
+      entityId: populatedDocument._id.toString(),
+      createdBy: createdById,
+    });
 
     return populatedDocument;
   }
@@ -133,6 +145,15 @@ export class DocumentsService {
 
     this.socketGateway.emitToAll('documentUpdated', document);
 
+    this.notificationsService.create({
+      type: NotificationType.DOCUMENT_UPDATED,
+      title: 'Hujjat yangilandi',
+      message: `Hujjat yangilandi: ${document.documentNumber}`,
+      entityType: 'DOCUMENT',
+      entityId: id,
+      createdBy: userId,
+    });
+
     return document;
   }
 
@@ -181,6 +202,15 @@ export class DocumentsService {
       oldStatus,
       newStatus: updateStatusDto.status,
       document: updatedDocument,
+    });
+
+    this.notificationsService.create({
+      type: NotificationType.DOCUMENT_STATUS_CHANGED,
+      title: 'Hujjat statusi o\'zgardi',
+      message: `Hujjat ${updatedDocument.documentNumber} statusi ${oldStatus} dan ${updateStatusDto.status} ga o'zgardi`,
+      entityType: 'DOCUMENT',
+      entityId: id,
+      createdBy: userId,
     });
 
     return updatedDocument;

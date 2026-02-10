@@ -7,6 +7,8 @@ import { UpdateShipmentDto } from './dto/update-shipment.dto';
 import { Request } from '../requests/schemas/request.schema';
 import { SocketGateway } from '../../socket/socket.gateway';
 import { ActivityLogsService } from '../activity-logs/activity-logs.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/schemas/notification.schema';
 
 @Injectable()
 export class ShipmentsService {
@@ -15,6 +17,7 @@ export class ShipmentsService {
     @InjectModel(Request.name) private requestModel: Model<Request>,
     private socketGateway: SocketGateway,
     private activityLogsService: ActivityLogsService,
+    private notificationsService: NotificationsService,
   ) {}
 
   async create(createDto: CreateShipmentDto, createdById: string): Promise<Shipment> {
@@ -39,6 +42,15 @@ export class ShipmentsService {
     });
 
     this.socketGateway.emitToAll('shipmentCreated', savedShipment);
+
+    this.notificationsService.create({
+      type: NotificationType.SHIPMENT_CREATED,
+      title: 'Yangi jo\'natma',
+      message: `Yangi jo'natma yaratildi${createDto.shipmentNo ? `: ${createDto.shipmentNo}` : ''}`,
+      entityType: 'SHIPMENT',
+      entityId: savedShipment._id.toString(),
+      createdBy: createdById,
+    });
 
     return savedShipment;
   }
@@ -93,6 +105,15 @@ export class ShipmentsService {
     });
 
     this.socketGateway.emitToAll('shipmentUpdated', populatedShipment);
+
+    this.notificationsService.create({
+      type: NotificationType.SHIPMENT_UPDATED,
+      title: 'Jo\'natma yangilandi',
+      message: `Jo'natma yangilandi${updateDto.status ? `, status: ${updateDto.status}` : ''}`,
+      entityType: 'SHIPMENT',
+      entityId: id,
+      createdBy: userId,
+    });
 
     return populatedShipment;
   }

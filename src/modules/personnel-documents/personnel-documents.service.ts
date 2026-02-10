@@ -15,6 +15,8 @@ import { FilterPersonnelDocumentDto } from './dto/filter-personnel-document.dto'
 import { UpdatePersonnelDocumentStatusDto } from './dto/update-personnel-document-status.dto';
 import { ActivityLogsService } from '../activity-logs/activity-logs.service';
 import { SocketGateway } from '../../socket/socket.gateway';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/schemas/notification.schema';
 
 @Injectable()
 export class PersonnelDocumentsService {
@@ -25,6 +27,7 @@ export class PersonnelDocumentsService {
     private documentModel: Model<PersonnelDocument>,
     private activityLogsService: ActivityLogsService,
     private socketGateway: SocketGateway,
+    private notificationsService: NotificationsService,
   ) {}
 
   // ==================== CATEGORIES ====================
@@ -177,6 +180,15 @@ export class PersonnelDocumentsService {
 
     this.socketGateway.emitToAll('personnelDocumentCreated', populated);
 
+    this.notificationsService.create({
+      type: NotificationType.PERSONNEL_DOC_CREATED,
+      title: 'Yangi kadrlar hujjati',
+      message: `Yangi kadrlar hujjati yaratildi: ${populated.documentNumber}`,
+      entityType: 'PERSONNEL_DOCUMENT',
+      entityId: populated._id.toString(),
+      createdBy: userId,
+    });
+
     return populated;
   }
 
@@ -267,6 +279,15 @@ export class PersonnelDocumentsService {
     });
 
     this.socketGateway.emitToAll('personnelDocumentUpdated', document);
+
+    this.notificationsService.create({
+      type: NotificationType.PERSONNEL_DOC_UPDATED,
+      title: 'Kadrlar hujjati yangilandi',
+      message: `Kadrlar hujjati yangilandi: ${document.documentNumber}`,
+      entityType: 'PERSONNEL_DOCUMENT',
+      entityId: id,
+      createdBy: userId,
+    });
 
     return document;
   }

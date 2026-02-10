@@ -15,6 +15,8 @@ import { FilterInternalDocumentDto } from './dto/filter-internal-document.dto';
 import { UpdateInternalDocumentStatusDto } from './dto/update-internal-document-status.dto';
 import { ActivityLogsService } from '../activity-logs/activity-logs.service';
 import { SocketGateway } from '../../socket/socket.gateway';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/schemas/notification.schema';
 
 @Injectable()
 export class InternalDocumentsService {
@@ -25,6 +27,7 @@ export class InternalDocumentsService {
     private documentModel: Model<InternalDocument>,
     private activityLogsService: ActivityLogsService,
     private socketGateway: SocketGateway,
+    private notificationsService: NotificationsService,
   ) {}
 
   // ==================== CATEGORIES ====================
@@ -183,6 +186,15 @@ export class InternalDocumentsService {
 
     this.socketGateway.emitToAll('internalDocumentCreated', populated);
 
+    this.notificationsService.create({
+      type: NotificationType.INTERNAL_DOC_CREATED,
+      title: 'Yangi ichki hujjat',
+      message: `Yangi ichki hujjat yaratildi: ${populated.documentNumber}`,
+      entityType: 'INTERNAL_DOCUMENT',
+      entityId: populated._id.toString(),
+      createdBy: userId,
+    });
+
     return populated;
   }
 
@@ -267,6 +279,15 @@ export class InternalDocumentsService {
     });
 
     this.socketGateway.emitToAll('internalDocumentUpdated', document);
+
+    this.notificationsService.create({
+      type: NotificationType.INTERNAL_DOC_UPDATED,
+      title: 'Ichki hujjat yangilandi',
+      message: `Ichki hujjat yangilandi: ${document.documentNumber}`,
+      entityType: 'INTERNAL_DOCUMENT',
+      entityId: id,
+      createdBy: userId,
+    });
 
     return document;
   }
