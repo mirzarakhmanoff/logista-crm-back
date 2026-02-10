@@ -182,8 +182,8 @@ export class PersonnelDocumentsService {
 
     this.notificationsService.create({
       type: NotificationType.PERSONNEL_DOC_CREATED,
-      title: 'Yangi kadrlar hujjati',
-      message: `Yangi kadrlar hujjati yaratildi: ${populated.documentNumber}`,
+      title: 'Новый кадровый документ',
+      message: `Создан новый кадровый документ: ${populated.documentNumber}`,
       entityType: 'PERSONNEL_DOCUMENT',
       entityId: populated._id.toString(),
       createdBy: userId,
@@ -282,8 +282,8 @@ export class PersonnelDocumentsService {
 
     this.notificationsService.create({
       type: NotificationType.PERSONNEL_DOC_UPDATED,
-      title: 'Kadrlar hujjati yangilandi',
-      message: `Kadrlar hujjati yangilandi: ${document.documentNumber}`,
+      title: 'Кадровый документ обновлён',
+      message: `Кадровый документ обновлён: ${document.documentNumber}`,
       entityType: 'PERSONNEL_DOCUMENT',
       entityId: id,
       createdBy: userId,

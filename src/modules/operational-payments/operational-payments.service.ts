@@ -67,8 +67,8 @@ export class OperationalPaymentsService {
 
     this.notificationsService.create({
       type: NotificationType.PAYMENT_CREATED,
-      title: 'Yangi to\'lov',
-      message: `Yangi operatsion to'lov yaratildi: ${saved.paymentNumber}`,
+      title: 'Новый платёж',
+      message: `Создан новый операционный платёж: ${saved.paymentNumber}`,
       entityType: 'OPERATIONAL_PAYMENT',
       entityId: saved._id.toString(),
       createdBy: createdById,
@@ -229,8 +229,8 @@ export class OperationalPaymentsService {
     if (updateDto.status) {
       this.notificationsService.create({
         type: NotificationType.PAYMENT_STATUS_CHANGED,
-        title: 'To\'lov statusi o\'zgardi',
-        message: `To'lov ${payment.paymentNumber} statusi ${updateDto.status} ga o'zgardi`,
+        title: 'Статус платежа изменён',
+        message: `Статус платежа ${payment.paymentNumber} изменён на ${updateDto.status}`,
         entityType: 'OPERATIONAL_PAYMENT',
         entityId: id,
         createdBy: userId,

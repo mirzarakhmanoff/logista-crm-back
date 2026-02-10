@@ -65,8 +65,8 @@ export class ClientsService {
 
     this.notificationsService.create({
       type: NotificationType.CLIENT_CREATED,
-      title: 'Yangi klient',
-      message: `"${populatedClient.name}" klienti qo'shildi`,
+      title: 'Новый клиент',
+      message: `Добавлен клиент "${populatedClient.name}"`,
       entityType: 'CLIENT',
       entityId: populatedClient._id.toString(),
       createdBy: createdById,
@@ -137,8 +137,8 @@ export class ClientsService {
 
     this.notificationsService.create({
       type: NotificationType.CLIENT_UPDATED,
-      title: 'Klient yangilandi',
-      message: `"${client.name}" klienti yangilandi`,
+      title: 'Клиент обновлён',
+      message: `Клиент "${client.name}" обновлён`,
       entityType: 'CLIENT',
       entityId: id,
       createdBy: updatedById,

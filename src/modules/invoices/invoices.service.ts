@@ -47,8 +47,8 @@ export class InvoicesService {
 
     this.notificationsService.create({
       type: NotificationType.INVOICE_CREATED,
-      title: 'Yangi faktura',
-      message: `Yangi faktura yaratildi: ${createDto.number}`,
+      title: 'Новый счёт',
+      message: `Создан новый счёт: ${createDto.number}`,
       entityType: 'INVOICE',
       entityId: savedInvoice._id.toString(),
       createdBy: createdById,
@@ -101,8 +101,8 @@ export class InvoicesService {
 
     this.notificationsService.create({
       type: NotificationType.INVOICE_UPDATED,
-      title: 'Faktura yangilandi',
-      message: `Faktura ${invoice.number} yangilandi`,
+      title: 'Счёт обновлён',
+      message: `Счёт ${invoice.number} обновлён`,
       entityType: 'INVOICE',
       entityId: id,
       createdBy: userId,
@@ -156,8 +156,8 @@ export class InvoicesService {
 
     this.notificationsService.create({
       type: NotificationType.INVOICE_PAID,
-      title: 'Faktura to\'landi',
-      message: `Faktura ${invoice.number} ga ${payDto.amount} ${invoice.currency} to'lov qabul qilindi`,
+      title: 'Счёт оплачен',
+      message: `По счёту ${invoice.number} получена оплата ${payDto.amount} ${invoice.currency}`,
       entityType: 'INVOICE',
       entityId: id,
       createdBy: userId,

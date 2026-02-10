@@ -61,8 +61,8 @@ export class DocumentsService {
 
     this.notificationsService.create({
       type: NotificationType.DOCUMENT_CREATED,
-      title: 'Yangi hujjat',
-      message: `Yangi hujjat yaratildi: ${populatedDocument.documentNumber}`,
+      title: 'Новый документ',
+      message: `Создан новый документ: ${populatedDocument.documentNumber}`,
       entityType: 'DOCUMENT',
       entityId: populatedDocument._id.toString(),
       createdBy: createdById,
@@ -147,8 +147,8 @@ export class DocumentsService {
 
     this.notificationsService.create({
       type: NotificationType.DOCUMENT_UPDATED,
-      title: 'Hujjat yangilandi',
-      message: `Hujjat yangilandi: ${document.documentNumber}`,
+      title: 'Документ обновлён',
+      message: `Документ обновлён: ${document.documentNumber}`,
       entityType: 'DOCUMENT',
       entityId: id,
       createdBy: userId,
@@ -206,8 +206,8 @@ export class DocumentsService {
 
     this.notificationsService.create({
       type: NotificationType.DOCUMENT_STATUS_CHANGED,
-      title: 'Hujjat statusi o\'zgardi',
-      message: `Hujjat ${updatedDocument.documentNumber} statusi ${oldStatus} dan ${updateStatusDto.status} ga o'zgardi`,
+      title: 'Статус документа изменён',
+      message: `Статус документа ${updatedDocument.documentNumber} изменён с ${oldStatus} на ${updateStatusDto.status}`,
       entityType: 'DOCUMENT',
       entityId: id,
       createdBy: userId,

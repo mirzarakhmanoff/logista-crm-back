@@ -188,8 +188,8 @@ export class InternalDocumentsService {
 
     this.notificationsService.create({
       type: NotificationType.INTERNAL_DOC_CREATED,
-      title: 'Yangi ichki hujjat',
-      message: `Yangi ichki hujjat yaratildi: ${populated.documentNumber}`,
+      title: 'Новый внутренний документ',
+      message: `Создан новый внутренний документ: ${populated.documentNumber}`,
       entityType: 'INTERNAL_DOCUMENT',
       entityId: populated._id.toString(),
       createdBy: userId,
@@ -282,8 +282,8 @@ export class InternalDocumentsService {
 
     this.notificationsService.create({
       type: NotificationType.INTERNAL_DOC_UPDATED,
-      title: 'Ichki hujjat yangilandi',
-      message: `Ichki hujjat yangilandi: ${document.documentNumber}`,
+      title: 'Внутренний документ обновлён',
+      message: `Внутренний документ обновлён: ${document.documentNumber}`,
       entityType: 'INTERNAL_DOCUMENT',
       entityId: id,
       createdBy: userId,

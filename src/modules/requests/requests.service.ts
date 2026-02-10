@@ -143,8 +143,8 @@ export class RequestsService {
 
     this.notificationsService.create({
       type: NotificationType.REQUEST_CREATED,
-      title: 'Yangi zayavka',
-      message: `Yangi zayavka yaratildi: ${populatedRequest.cargoName || populatedRequest.route || ''}`,
+      title: 'Новая заявка',
+      message: `Создана новая заявка: ${populatedRequest.cargoName || populatedRequest.route || ''}`,
       entityType: 'REQUEST',
       entityId: savedRequest._id.toString(),
       createdBy: createdById,
@@ -265,8 +265,8 @@ export class RequestsService {
 
     this.notificationsService.create({
       type: NotificationType.REQUEST_UPDATED,
-      title: 'Zayavka yangilandi',
-      message: `Zayavka yangilandi`,
+      title: 'Заявка обновлена',
+      message: `Заявка обновлена`,
       entityType: 'REQUEST',
       entityId: id,
       createdBy: userId,
@@ -320,8 +320,8 @@ export class RequestsService {
 
     this.notificationsService.create({
       type: NotificationType.REQUEST_STATUS_CHANGED,
-      title: 'Zayavka statusi o\'zgardi',
-      message: `Zayavka statusi ${oldStatus} dan ${toKey} ga o'zgardi`,
+      title: 'Статус заявки изменён',
+      message: `Статус заявки изменён с ${oldStatus} на ${toKey}`,
       entityType: 'REQUEST',
       entityId: id,
       createdBy: userId,
@@ -378,8 +378,8 @@ export class RequestsService {
     if (isStatusChange) {
       this.notificationsService.create({
         type: NotificationType.REQUEST_STATUS_CHANGED,
-        title: 'Zayavka statusi o\'zgardi',
-        message: `Zayavka statusi ${oldStatus} dan ${moveDto.toStatusKey} ga o'zgardi`,
+        title: 'Статус заявки изменён',
+        message: `Статус заявки изменён с ${oldStatus} на ${moveDto.toStatusKey}`,
         entityType: 'REQUEST',
         entityId: id,
         createdBy: userId,

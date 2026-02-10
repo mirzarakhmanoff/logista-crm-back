@@ -45,8 +45,8 @@ export class ShipmentsService {
 
     this.notificationsService.create({
       type: NotificationType.SHIPMENT_CREATED,
-      title: 'Yangi jo\'natma',
-      message: `Yangi jo'natma yaratildi${createDto.shipmentNo ? `: ${createDto.shipmentNo}` : ''}`,
+      title: 'Новая отправка',
+      message: `Создана новая отправка${createDto.shipmentNo ? `: ${createDto.shipmentNo}` : ''}`,
       entityType: 'SHIPMENT',
       entityId: savedShipment._id.toString(),
       createdBy: createdById,
@@ -108,8 +108,8 @@ export class ShipmentsService {
 
     this.notificationsService.create({
       type: NotificationType.SHIPMENT_UPDATED,
-      title: 'Jo\'natma yangilandi',
-      message: `Jo'natma yangilandi${updateDto.status ? `, status: ${updateDto.status}` : ''}`,
+      title: 'Отправка обновлена',
+      message: `Отправка обновлена${updateDto.status ? `, статус: ${updateDto.status}` : ''}`,
       entityType: 'SHIPMENT',
       entityId: id,
       createdBy: userId,

@@ -45,7 +45,7 @@ export class NotificationsService {
     const skip = (page - 1) * limit;
     const userObjectId = new Types.ObjectId(userId);
 
-    const query: any = {};
+    const query: any = { createdBy: { $ne: userObjectId } };
 
     if (filterDto.unreadOnly) {
       query.readBy = { $ne: userObjectId };
@@ -62,6 +62,7 @@ export class NotificationsService {
         .exec(),
       this.notificationModel.countDocuments(query),
       this.notificationModel.countDocuments({
+        createdBy: { $ne: userObjectId },
         readBy: { $ne: userObjectId },
       }),
     ]);
@@ -78,8 +79,10 @@ export class NotificationsService {
   }
 
   async getUnreadCount(userId: string): Promise<number> {
+    const userObjectId = new Types.ObjectId(userId);
     return this.notificationModel.countDocuments({
-      readBy: { $ne: new Types.ObjectId(userId) },
+      createdBy: { $ne: userObjectId },
+      readBy: { $ne: userObjectId },
     });
   }
 
