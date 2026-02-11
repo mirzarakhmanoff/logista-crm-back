@@ -104,7 +104,7 @@ export class DashboardService {
     const last12Months = new Date(now.getFullYear(), now.getMonth() - 11, 1);
 
     const [
-      // Overview counts
+    
       totalRequests,
       totalClients,
       totalAgents,
