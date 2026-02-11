@@ -6,8 +6,6 @@ import {
   Patch,
   Param,
   Delete,
-  HttpCode,
-  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -118,11 +116,11 @@ export class UsersController {
 
   @Delete(':id')
   @Permissions('users.delete')
-  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete user by ID (Admin/Director only)' })
-  @ApiResponse({ status: 204, description: 'User deleted successfully' })
+  @ApiResponse({ status: 200, description: 'User deleted successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
   async remove(@Param('id') id: string) {
     await this.usersService.remove(id);
+    return { message: 'User deleted successfully' };
   }
 }
