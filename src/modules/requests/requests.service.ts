@@ -580,7 +580,7 @@ export class RequestsService {
       throw new NotFoundException(`File with ID ${fileId} not found`);
     }
 
-    // Delete file from disk
+   
     if (file.path && fs.existsSync(file.path)) {
       fs.unlinkSync(file.path);
     }
