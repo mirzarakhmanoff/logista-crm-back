@@ -30,7 +30,8 @@ export class IssuedCodesService {
 
     const issuedCode = new this.issuedCodeModel({
       ...createDto,
-      issuedBy: issuedById,
+      requestId: new Types.ObjectId(createDto.requestId),
+      issuedBy: new Types.ObjectId(issuedById),
       issuedAt: new Date(),
     });
 
