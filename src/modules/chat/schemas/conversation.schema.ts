@@ -24,6 +24,9 @@ export class Conversation extends Document {
 
   @Prop({ type: Types.ObjectId, ref: 'ChatMessage' })
   lastMessage?: Types.ObjectId;
+
+  @Prop({ type: Boolean, default: false })
+  isDefault: boolean;
 }
 
 export const ConversationSchema =
@@ -31,3 +34,7 @@ export const ConversationSchema =
 
 ConversationSchema.index({ participants: 1 });
 ConversationSchema.index({ updatedAt: -1 });
+ConversationSchema.index(
+  { isDefault: 1 },
+  { unique: true, partialFilterExpression: { isDefault: true } },
+);

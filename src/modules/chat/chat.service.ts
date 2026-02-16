@@ -35,6 +35,92 @@ export class ChatService {
     private chatGateway: ChatGateway,
   ) {}
 
+  // ==================== DEFAULT GROUP ====================
+
+  async getOrCreateDefaultGroup() {
+    let defaultGroup = await this.conversationModel
+      .findOne({ isDefault: true })
+      .exec();
+
+    const allActiveUsers = await this.userModel
+      .find({ isActive: true })
+      .select('_id')
+      .exec();
+    const allUserIds = allActiveUsers.map((u) => u._id);
+
+    if (!defaultGroup) {
+      // Birinchi marta — default guruh yaratish
+      defaultGroup = await this.conversationModel.create({
+        type: ConversationType.GROUP,
+        name: 'Umumiy',
+        participants: allUserIds,
+        createdBy: allUserIds[0],
+        admins: allUserIds.length > 0 ? [allUserIds[0]] : [],
+        isDefault: true,
+      });
+
+      // System message
+      await this.messageModel.create({
+        conversationId: defaultGroup._id,
+        senderId: allUserIds[0],
+        content: 'Umumiy guruh yaratildi',
+        type: MessageType.SYSTEM,
+        readBy: allUserIds,
+      });
+
+      this.logger.log('Default group created');
+    } else {
+      // Yangi userlarni sinxronlash
+      const currentIds = defaultGroup.participants.map((p) => p.toString());
+      const newUserIds = allUserIds.filter(
+        (id) => !currentIds.includes(id.toString()),
+      );
+
+      if (newUserIds.length > 0) {
+        defaultGroup.participants = [
+          ...new Set([
+            ...currentIds,
+            ...newUserIds.map((id) => id.toString()),
+          ]),
+        ].map((id) => new Types.ObjectId(id));
+        await defaultGroup.save();
+      }
+    }
+
+    return this.conversationModel
+      .findById(defaultGroup._id)
+      .populate('participants', 'fullName email avatar role')
+      .populate({
+        path: 'lastMessage',
+        populate: { path: 'senderId', select: 'fullName avatar' },
+      })
+      .exec();
+  }
+
+  async ensureUserInDefaultGroup(userId: string) {
+    const userObjectId = new Types.ObjectId(userId);
+
+    const defaultGroup = await this.conversationModel
+      .findOne({ isDefault: true })
+      .exec();
+
+    if (!defaultGroup) {
+      // Default guruh hali yaratilmagan — yaratib qo'yamiz
+      await this.getOrCreateDefaultGroup();
+      return;
+    }
+
+    const isParticipant = defaultGroup.participants.some(
+      (p) => p.toString() === userId,
+    );
+
+    if (!isParticipant) {
+      await this.conversationModel.findByIdAndUpdate(defaultGroup._id, {
+        $addToSet: { participants: userObjectId },
+      });
+    }
+  }
+
   // ==================== CONVERSATIONS ====================
 
   async createConversation(
@@ -128,6 +214,9 @@ export class ChatService {
   }
 
   async getUserConversations(userId: string, query: GetConversationsDto) {
+    // Default guruhga avtomatik qo'shish
+    await this.ensureUserInDefaultGroup(userId);
+
     const userObjectId = new Types.ObjectId(userId);
 
     const pipeline: any[] = [
@@ -537,6 +626,13 @@ export class ChatService {
     );
     if (!isAdmin) {
       throw new ForbiddenException('Faqat admin guruhni yangilashi mumkin');
+    }
+
+    // Default guruhdan ishtirokchilarni olib tashlab bo'lmaydi
+    if ((conversation as any).isDefault && dto.removeParticipants?.length) {
+      throw new BadRequestException(
+        'Umumiy guruhdan ishtirokchilarni olib tashlab bo\'lmaydi',
+      );
     }
 
     if (dto.name) {

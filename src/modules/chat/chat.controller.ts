@@ -55,6 +55,13 @@ export class ChatController {
     return this.chatService.getUserConversations(user.userId, query);
   }
 
+  @Get('conversations/default')
+  @ApiOperation({ summary: 'Umumiy (default) guruh suhbatni olish' })
+  @ApiResponse({ status: 200, description: 'Default guruh qaytarildi' })
+  async getDefaultGroup() {
+    return this.chatService.getOrCreateDefaultGroup();
+  }
+
   @Get('conversations/:id')
   @ApiOperation({ summary: 'Suhbat tafsilotlari' })
   @ApiParam({ name: 'id', description: 'Conversation ID' })
