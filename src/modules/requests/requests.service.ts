@@ -300,6 +300,13 @@ export class RequestsService {
     const oldStatus = request.statusKey;
     request.statusKey = toKey;
     request.position = position;
+
+    if (toKey === RequestStatusKey.COMPLETED) {
+      request.isArchived = true;
+      request.archivedAt = new Date();
+      (request as any).archivedBy = new Types.ObjectId(userId);
+    }
+
     await request.save();
 
     const populatedRequest = await this.findOne(id);
@@ -355,6 +362,13 @@ export class RequestsService {
     if (moveDto.position !== undefined) {
       request.position = moveDto.position;
     }
+
+    if (moveDto.toStatusKey === RequestStatusKey.COMPLETED) {
+      request.isArchived = true;
+      request.archivedAt = new Date();
+      (request as any).archivedBy = new Types.ObjectId(userId);
+    }
+
     await request.save();
 
     const populatedRequest = await this.findOne(id);
@@ -392,12 +406,21 @@ export class RequestsService {
   async getKanban(type: RequestType): Promise<any> {
     const statuses = this.getStatusDefinitions(type);
 
-    const requests = await this.requestModel
-      .find({ type, isArchived: { $ne: true } })
-      .populate('clientId', 'name company phone email')
-      .populate('assignedTo', 'fullName email')
-      .sort({ position: 1 })
-      .exec();
+    const [requests, completedRequests] = await Promise.all([
+      this.requestModel
+        .find({ type, isArchived: { $ne: true } })
+        .populate('clientId', 'name company phone email')
+        .populate('assignedTo', 'fullName email')
+        .sort({ position: 1 })
+        .exec(),
+      this.requestModel
+        .find({ type, statusKey: RequestStatusKey.COMPLETED, isArchived: true })
+        .populate('clientId', 'name company phone email')
+        .populate('assignedTo', 'fullName email')
+        .sort({ archivedAt: -1 })
+        .limit(3)
+        .exec(),
+    ]);
 
     const columns = statuses.map(s => ({
       key: s.key,
@@ -411,30 +434,36 @@ export class RequestsService {
       itemsByStatus[status.key] = [];
     }
 
+    const mapRequest = (request: any) => ({
+      _id: request._id,
+      type: request.type,
+      statusKey: request.statusKey,
+      source: request.source,
+      comment: request.comment,
+      cargoName: request.cargoName,
+      route: request.route,
+      weight: request.weight,
+      volume: request.volume,
+      amount: request.amount,
+      deadline: request.deadline,
+      paymentStatus: request.paymentStatus,
+      client: request.clientId ?? request.client,
+      assignedTo: request.assignedTo,
+      manager: request.manager,
+      position: request.position,
+      isArchived: request.isArchived,
+      archivedAt: request.archivedAt,
+      createdAt: request.createdAt,
+      updatedAt: request.updatedAt,
+    });
+
     for (const request of requests) {
       if (itemsByStatus[request.statusKey]) {
-        itemsByStatus[request.statusKey].push({
-          _id: request._id,
-          type: request.type,
-          statusKey: request.statusKey,
-          source: request.source,
-          comment: request.comment,
-          cargoName: request.cargoName,
-          route: request.route,
-          weight: request.weight,
-          volume: request.volume,
-          amount: request.amount,
-          deadline: request.deadline,
-          paymentStatus: request.paymentStatus,
-          client: request.clientId ?? request.client,
-          assignedTo: request.assignedTo,
-          manager: request.manager,
-          position: request.position,
-          createdAt: request.createdAt,
-          updatedAt: request.updatedAt,
-        });
+        itemsByStatus[request.statusKey].push(mapRequest(request));
       }
     }
+
+    itemsByStatus[RequestStatusKey.COMPLETED] = completedRequests.map(mapRequest);
 
     return { columns, itemsByStatus };
   }
