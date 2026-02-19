@@ -86,30 +86,14 @@ export const REQUEST_STATUS_DEFINITIONS = {
   ],
 } as const;
 
-// Barcha statuslar (COMPLETED va REJECTED dan tashqari) - erkin o'tish mumkin
-const ALL_ACTIVE_STATUSES = [
-  RequestStatusKey.NEW,
-  RequestStatusKey.NEGOTIATIONS,
-  RequestStatusKey.CALCULATION,
-  RequestStatusKey.DOCUMENTS,
-  RequestStatusKey.LOADING,
-  RequestStatusKey.TRANSIT,
-  RequestStatusKey.DELIVERY,
-];
+const ALL_STATUSES = Object.values(RequestStatusKey);
 
-// Har qanday aktiv statusdan boshqa har qanday statusga o'tish mumkin
+// Har qanday statusdan har qanday statusga o'tish mumkin
 const createFlexibleTransitions = () => {
   const transitions: Record<string, RequestStatusKey[]> = {};
-  for (const status of ALL_ACTIVE_STATUSES) {
-    transitions[status] = [
-      ...ALL_ACTIVE_STATUSES.filter(s => s !== status),
-      RequestStatusKey.COMPLETED,
-      RequestStatusKey.REJECTED,
-    ];
+  for (const status of ALL_STATUSES) {
+    transitions[status] = ALL_STATUSES.filter(s => s !== status);
   }
-  // Final statuslardan ham o'tish mumkin (adashib qo'yilgan bo'lsa)
-  transitions[RequestStatusKey.COMPLETED] = [RequestStatusKey.REJECTED, ...ALL_ACTIVE_STATUSES];
-  transitions[RequestStatusKey.REJECTED] = [RequestStatusKey.COMPLETED, ...ALL_ACTIVE_STATUSES];
   return transitions;
 };
 
