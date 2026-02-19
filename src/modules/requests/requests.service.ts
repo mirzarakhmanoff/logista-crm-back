@@ -305,6 +305,10 @@ export class RequestsService {
       request.isArchived = true;
       request.archivedAt = new Date();
       (request as any).archivedBy = new Types.ObjectId(userId);
+    } else if (oldStatus === RequestStatusKey.COMPLETED) {
+      request.isArchived = false;
+      request.archivedAt = undefined;
+      (request as any).archivedBy = undefined;
     }
 
     await request.save();
@@ -367,6 +371,10 @@ export class RequestsService {
       request.isArchived = true;
       request.archivedAt = new Date();
       (request as any).archivedBy = new Types.ObjectId(userId);
+    } else if (oldStatus === RequestStatusKey.COMPLETED) {
+      request.isArchived = false;
+      request.archivedAt = undefined;
+      (request as any).archivedBy = undefined;
     }
 
     await request.save();

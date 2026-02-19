@@ -107,6 +107,9 @@ const createFlexibleTransitions = () => {
       RequestStatusKey.REJECTED,
     ];
   }
+  // Final statuslardan ham o'tish mumkin (adashib qo'yilgan bo'lsa)
+  transitions[RequestStatusKey.COMPLETED] = [RequestStatusKey.REJECTED, ...ALL_ACTIVE_STATUSES];
+  transitions[RequestStatusKey.REJECTED] = [RequestStatusKey.COMPLETED, ...ALL_ACTIVE_STATUSES];
   return transitions;
 };
 
