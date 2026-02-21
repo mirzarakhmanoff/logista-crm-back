@@ -69,6 +69,7 @@ export class ChatService {
         content: 'Umumiy guruh yaratildi',
         type: MessageType.SYSTEM,
         readBy: allUserIds,
+        companyId: companyObjectId,
       });
 
       this.logger.log(`Default group created for company ${companyId}`);
@@ -207,6 +208,7 @@ export class ChatService {
       content: `${user?.fullName || 'Foydalanuvchi'} guruh yaratdi`,
       type: MessageType.SYSTEM,
       readBy: participantIds,
+      companyId: companyObjectId,
     });
 
     const populated = await this.conversationModel
@@ -455,6 +457,7 @@ export class ChatService {
         ? new Types.ObjectId(dto.replyTo)
         : undefined,
       readBy: [userObjectId],
+      companyId: (conversation as any).companyId,
     });
 
     // Update conversation lastMessage
@@ -525,6 +528,7 @@ export class ChatService {
         ? new Types.ObjectId(dto.replyTo)
         : undefined,
       readBy: [userObjectId],
+      companyId: (conversation as any).companyId,
     });
 
     await this.conversationModel.findByIdAndUpdate(dto.conversationId, {
@@ -673,6 +677,7 @@ export class ChatService {
         content: `${user?.fullName} ${names} ni qo'shdi`,
         type: MessageType.SYSTEM,
         readBy: conversation.participants,
+        companyId: conversation.companyId,
       });
     }
 
