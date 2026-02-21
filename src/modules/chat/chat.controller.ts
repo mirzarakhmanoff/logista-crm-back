@@ -41,7 +41,7 @@ export class ChatController {
     @Body() dto: CreateConversationDto,
     @CurrentUser() user: any,
   ) {
-    return this.chatService.createConversation(dto, user.userId);
+    return this.chatService.createConversation(dto, user.userId, user.companyId);
   }
 
   @Get('conversations')
@@ -52,14 +52,14 @@ export class ChatController {
     @Query() query: GetConversationsDto,
     @CurrentUser() user: any,
   ) {
-    return this.chatService.getUserConversations(user.userId, query);
+    return this.chatService.getUserConversations(user.userId, query, user.companyId);
   }
 
   @Get('conversations/default')
   @ApiOperation({ summary: 'Umumiy (default) guruh suhbatni olish' })
   @ApiResponse({ status: 200, description: 'Default guruh qaytarildi' })
-  async getDefaultGroup() {
-    return this.chatService.getOrCreateDefaultGroup();
+  async getDefaultGroup(@CurrentUser() user: any) {
+    return this.chatService.getOrCreateDefaultGroup(user.companyId);
   }
 
   @Get('conversations/:id')
@@ -152,7 +152,7 @@ export class ChatController {
 
   @Get('users/online')
   @ApiOperation({ summary: 'Online foydalanuvchilar ro\'yxati' })
-  async getOnlineUsers() {
-    return this.chatService.getOnlineUsers();
+  async getOnlineUsers(@CurrentUser() user: any) {
+    return this.chatService.getOnlineUsers(user.companyId);
   }
 }

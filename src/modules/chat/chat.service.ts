@@ -37,13 +37,15 @@ export class ChatService {
 
   // ==================== DEFAULT GROUP ====================
 
-  async getOrCreateDefaultGroup() {
+  async getOrCreateDefaultGroup(companyId: string) {
+    const companyObjectId = new Types.ObjectId(companyId);
+
     let defaultGroup = await this.conversationModel
-      .findOne({ isDefault: true })
+      .findOne({ isDefault: true, companyId: companyObjectId })
       .exec();
 
     const allActiveUsers = await this.userModel
-      .find({ isActive: true })
+      .find({ isActive: true, companyId: companyObjectId })
       .select('_id')
       .exec();
     const allUserIds = allActiveUsers.map((u) => u._id);
@@ -57,6 +59,7 @@ export class ChatService {
         createdBy: allUserIds[0],
         admins: allUserIds.length > 0 ? [allUserIds[0]] : [],
         isDefault: true,
+        companyId: companyObjectId,
       });
 
       // System message
@@ -68,7 +71,7 @@ export class ChatService {
         readBy: allUserIds,
       });
 
-      this.logger.log('Default group created');
+      this.logger.log(`Default group created for company ${companyId}`);
     } else {
       // Yangi userlarni sinxronlash
       const currentIds = defaultGroup.participants.map((p) => p.toString());
@@ -97,16 +100,17 @@ export class ChatService {
       .exec();
   }
 
-  async ensureUserInDefaultGroup(userId: string) {
+  async ensureUserInDefaultGroup(userId: string, companyId: string) {
     const userObjectId = new Types.ObjectId(userId);
+    const companyObjectId = new Types.ObjectId(companyId);
 
     const defaultGroup = await this.conversationModel
-      .findOne({ isDefault: true })
+      .findOne({ isDefault: true, companyId: companyObjectId })
       .exec();
 
     if (!defaultGroup) {
       // Default guruh hali yaratilmagan — yaratib qo'yamiz
-      await this.getOrCreateDefaultGroup();
+      await this.getOrCreateDefaultGroup(companyId);
       return;
     }
 
@@ -126,8 +130,10 @@ export class ChatService {
   async createConversation(
     dto: CreateConversationDto,
     userId: string,
+    companyId: string,
   ) {
     const userObjectId = new Types.ObjectId(userId);
+    const companyObjectId = new Types.ObjectId(companyId);
     const participantIds = [
       ...new Set([userId, ...dto.participantIds]),
     ].map((id) => new Types.ObjectId(id));
@@ -148,6 +154,7 @@ export class ChatService {
         .findOne({
           type: ConversationType.PRIVATE,
           participants: { $all: sorted, $size: 2 },
+          companyId: companyObjectId,
         })
         .populate('participants', 'fullName email avatar role')
         .populate({
@@ -162,6 +169,7 @@ export class ChatService {
         type: ConversationType.PRIVATE,
         participants: sorted,
         createdBy: userObjectId,
+        companyId: companyObjectId,
       });
 
       const populated = await this.conversationModel
@@ -188,6 +196,7 @@ export class ChatService {
       participants: participantIds,
       createdBy: userObjectId,
       admins: [userObjectId],
+      companyId: companyObjectId,
     });
 
     // System message
@@ -213,14 +222,15 @@ export class ChatService {
     return populated;
   }
 
-  async getUserConversations(userId: string, query: GetConversationsDto) {
+  async getUserConversations(userId: string, query: GetConversationsDto, companyId: string) {
     // Default guruhga avtomatik qo'shish
-    await this.ensureUserInDefaultGroup(userId);
+    await this.ensureUserInDefaultGroup(userId, companyId);
 
     const userObjectId = new Types.ObjectId(userId);
+    const companyObjectId = new Types.ObjectId(companyId);
 
     const pipeline: any[] = [
-      { $match: { participants: userObjectId } },
+      { $match: { participants: userObjectId, companyId: companyObjectId } },
       { $sort: { updatedAt: -1 } },
 
       // Last message
@@ -587,7 +597,7 @@ export class ChatService {
 
   // ==================== ONLINE USERS ====================
 
-  async getOnlineUsers() {
+  async getOnlineUsers(companyId: string) {
     const onlineIds = this.chatGateway.getOnlineUserIds();
     if (onlineIds.length === 0) return [];
 
@@ -595,6 +605,7 @@ export class ChatService {
       .find({
         _id: { $in: onlineIds.map((id) => new Types.ObjectId(id)) },
         isActive: true,
+        companyId: new Types.ObjectId(companyId),
       })
       .select('fullName email avatar role')
       .exec();
