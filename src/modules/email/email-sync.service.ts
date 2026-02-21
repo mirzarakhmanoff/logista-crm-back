@@ -71,7 +71,7 @@ export class EmailSyncService {
             lastError: error.message,
             status: EmailAccountStatus.ERROR,
           });
-          this.socketGateway.emitToAll('emailSyncError', {
+          this.socketGateway.emitToCompany(account.companyId?.toString(), 'emailSyncError', {
             accountId: account._id,
             accountName: account.name,
             error: error.message,
@@ -194,6 +194,7 @@ export class EmailSyncService {
             flags: msg.flags,
             folder: 'INBOX',
             headers: msg.headers,
+            companyId: account.companyId,
           });
 
           const savedMessage = await emailMessage.save();
@@ -224,7 +225,7 @@ export class EmailSyncService {
       });
 
       if (result.newMessages > 0) {
-        this.socketGateway.emitToAll('newEmailsReceived', {
+        this.socketGateway.emitToCompany(account.companyId?.toString(), 'newEmailsReceived', {
           accountId: account._id,
           accountName: account.name,
           count: result.newMessages,

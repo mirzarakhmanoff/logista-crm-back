@@ -56,21 +56,23 @@ export class ChatService {
         type: ConversationType.GROUP,
         name: 'Umumiy',
         participants: allUserIds,
-        createdBy: allUserIds[0],
+        createdBy: allUserIds[0] ?? null,
         admins: allUserIds.length > 0 ? [allUserIds[0]] : [],
         isDefault: true,
         companyId: companyObjectId,
       });
 
-      // System message
-      await this.messageModel.create({
-        conversationId: defaultGroup._id,
-        senderId: allUserIds[0],
-        content: 'Umumiy guruh yaratildi',
-        type: MessageType.SYSTEM,
-        readBy: allUserIds,
-        companyId: companyObjectId,
-      });
+      // System message — faqat kamida bitta user bo'lganda
+      if (allUserIds.length > 0) {
+        await this.messageModel.create({
+          conversationId: defaultGroup._id,
+          senderId: allUserIds[0],
+          content: 'Umumiy guruh yaratildi',
+          type: MessageType.SYSTEM,
+          readBy: allUserIds,
+          companyId: companyObjectId,
+        });
+      }
 
       this.logger.log(`Default group created for company ${companyId}`);
     } else {

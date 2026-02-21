@@ -52,14 +52,14 @@ export class EmailController {
     @Body() dto: CreateEmailAccountDto,
     @CurrentUser() user: any,
   ) {
-    return this.emailService.createAccount(dto, user.userId);
+    return this.emailService.createAccount(dto, user.userId, user.companyId);
   }
 
   @Get('accounts')
   @ApiOperation({ summary: 'Barcha email akkauntlarni olish' })
   @ApiResponse({ status: 200, description: 'Email akkauntlar ro\'yxati' })
-  async getAccounts() {
-    return this.emailService.findAllAccounts();
+  async getAccounts(@CurrentUser() user: any) {
+    return this.emailService.findAllAccounts(user.companyId);
   }
 
   @Get('accounts/:id')
@@ -115,7 +115,7 @@ export class EmailController {
   @ApiOperation({ summary: 'Google OAuth2 ruxsat URL olish' })
   @ApiResponse({ status: 200, description: 'OAuth2 URL' })
   async getGoogleAuthUrl(@CurrentUser() user: any) {
-    const url = this.emailService.getGmailAuthUrl(user.userId);
+    const url = this.emailService.getGmailAuthUrl(user.userId, user.companyId);
     return { url };
   }
 
@@ -141,8 +141,8 @@ export class EmailController {
   @Get('messages')
   @ApiOperation({ summary: 'Barcha xatlarni filtrlash bilan olish' })
   @ApiResponse({ status: 200, description: 'Sahifalangan xatlar ro\'yxati' })
-  async getMessages(@Query() filterDto: FilterEmailDto) {
-    return this.emailService.findAllMessages(filterDto);
+  async getMessages(@Query() filterDto: FilterEmailDto, @CurrentUser() user: any) {
+    return this.emailService.findAllMessages(filterDto, user.companyId);
   }
 
   @Get('messages/:id')
@@ -168,7 +168,7 @@ export class EmailController {
     @Body() dto: SendEmailDto,
     @CurrentUser() user: any,
   ) {
-    return this.emailService.sendEmail(dto, user.userId);
+    return this.emailService.sendEmail(dto, user.userId, user.companyId);
   }
 
   @Post('messages/send-with-attachments')
@@ -186,6 +186,7 @@ export class EmailController {
       dto,
       files || [],
       user.userId,
+      user.companyId,
     );
   }
 
@@ -197,7 +198,7 @@ export class EmailController {
     @Body() dto: ReplyEmailDto,
     @CurrentUser() user: any,
   ) {
-    return this.emailService.replyToEmail(dto, user.userId);
+    return this.emailService.replyToEmail(dto, user.userId, user.companyId);
   }
 
   // ==================== CRM LINKING ====================
@@ -211,8 +212,9 @@ export class EmailController {
   async linkEmail(
     @Param('id') id: string,
     @Body() dto: LinkEmailDto,
+    @CurrentUser() user: any,
   ) {
-    return this.emailService.linkEmailToEntity(id, dto);
+    return this.emailService.linkEmailToEntity(id, dto, user.companyId);
   }
 
   @Delete('messages/:id/link/:entityType/:entityId')
@@ -242,11 +244,13 @@ export class EmailController {
     @Param('clientId') clientId: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
+    @CurrentUser() user?: any,
   ) {
     return this.emailService.getEmailsByClient(
       clientId,
       page || 1,
       limit || 20,
+      user.companyId,
     );
   }
 
@@ -259,11 +263,13 @@ export class EmailController {
     @Param('requestId') requestId: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
+    @CurrentUser() user?: any,
   ) {
     return this.emailService.getEmailsByRequest(
       requestId,
       page || 1,
       limit || 20,
+      user.companyId,
     );
   }
 
@@ -303,8 +309,8 @@ export class EmailController {
 
   @Get('stats')
   @ApiOperation({ summary: 'Email statistikasi (dashboard uchun)' })
-  async getStats() {
-    return this.emailService.getEmailStats();
+  async getStats(@CurrentUser() user: any) {
+    return this.emailService.getEmailStats(user.companyId);
   }
 
   // ==================== ATTACHMENTS ====================

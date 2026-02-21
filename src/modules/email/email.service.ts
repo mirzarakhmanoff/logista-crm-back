@@ -54,6 +54,7 @@ export class EmailService {
   async createAccount(
     dto: CreateEmailAccountDto,
     userId: string,
+    companyId: string,
   ): Promise<EmailAccount> {
     // Auto-fill IMAP/SMTP configs for well-known providers
     const imapConfig = dto.imapConfig || this.getDefaultImapConfig(dto.provider);
@@ -111,6 +112,7 @@ export class EmailService {
       createdBy: Types.ObjectId.isValid(userId)
         ? new Types.ObjectId(userId)
         : userId,
+      companyId: new Types.ObjectId(companyId),
     });
 
     const saved = await account.save();
@@ -129,9 +131,9 @@ export class EmailService {
     return this.accountModel.findById(saved._id).exec() as Promise<EmailAccount>;
   }
 
-  async findAllAccounts(): Promise<EmailAccount[]> {
+  async findAllAccounts(companyId: string): Promise<EmailAccount[]> {
     return this.accountModel
-      .find()
+      .find({ companyId: new Types.ObjectId(companyId) })
       .populate('createdBy', 'fullName email')
       .sort({ createdAt: -1 })
       .exec();
@@ -243,16 +245,17 @@ export class EmailService {
 
   // ==================== GMAIL OAUTH2 ====================
 
-  getGmailAuthUrl(userId: string): string {
-    return this.emailOAuthService.getAuthUrl(userId);
+  getGmailAuthUrl(userId: string, companyId: string): string {
+    return this.emailOAuthService.getAuthUrl(`${userId}:${companyId}`);
   }
 
   async handleGmailCallback(
     code: string,
-    userId: string,
+    state: string,
   ): Promise<EmailAccount> {
     try {
-      this.logger.log(`Gmail OAuth callback: userId=${userId}`);
+      const [userId, companyId] = state.split(':');
+      this.logger.log(`Gmail OAuth callback: userId=${userId}, companyId=${companyId}`);
 
       const tokens = await this.emailOAuthService.getTokensFromCode(code);
       this.logger.log(`Tokens received: accessToken=${!!tokens.accessToken}, refreshToken=${!!tokens.refreshToken}`);
@@ -262,7 +265,9 @@ export class EmailService {
       );
       this.logger.log(`Gmail email resolved: ${emailAddress}`);
 
-      const existing = await this.accountModel.findOne({ emailAddress }).exec();
+      const existing = await this.accountModel
+        .findOne({ emailAddress, companyId: new Types.ObjectId(companyId) })
+        .exec();
       if (existing) {
         existing.credentials = {
           user: emailAddress,
@@ -289,6 +294,7 @@ export class EmailService {
         },
         syncEnabled: true,
         createdBy: new Types.ObjectId(userId),
+        companyId: new Types.ObjectId(companyId),
       });
 
       const saved = await account.save();
@@ -312,13 +318,14 @@ export class EmailService {
 
   async findAllMessages(
     filterDto: FilterEmailDto,
+    companyId: string,
   ): Promise<{
     data: EmailMessage[];
     total: number;
     page: number;
     limit: number;
   }> {
-    const query: any = {};
+    const query: any = { companyId: new Types.ObjectId(companyId) };
     const page = filterDto.page || 1;
     const limit = filterDto.limit || 20;
     const skip = (page - 1) * limit;
@@ -424,6 +431,7 @@ export class EmailService {
   async sendEmail(
     dto: SendEmailDto,
     userId: string,
+    companyId: string,
   ): Promise<EmailMessage> {
     const account = await this.accountModel
       .findById(dto.accountId)
@@ -473,11 +481,12 @@ export class EmailService {
       threadId: result.messageId,
       folder: 'SENT',
       sentBy: userId,
+      companyId: new Types.ObjectId(companyId),
     });
 
     const savedMessage = await message.save();
 
-    this.socketGateway.emitToAll('emailSent', {
+    this.socketGateway.emitToCompany(companyId, 'emailSent', {
       messageId: savedMessage._id,
       to: dto.to,
       subject: dto.subject,
@@ -490,6 +499,7 @@ export class EmailService {
     dto: SendEmailDto,
     files: Express.Multer.File[],
     userId: string,
+    companyId: string,
   ): Promise<EmailMessage> {
     const account = await this.accountModel
       .findById(dto.accountId)
@@ -551,11 +561,12 @@ export class EmailService {
       folder: 'SENT',
       attachments: savedAttachments,
       sentBy: userId,
+      companyId: new Types.ObjectId(companyId),
     });
 
     const savedMessage = await message.save();
 
-    this.socketGateway.emitToAll('emailSent', {
+    this.socketGateway.emitToCompany(companyId, 'emailSent', {
       messageId: savedMessage._id,
       to: dto.to,
       subject: dto.subject,
@@ -567,6 +578,7 @@ export class EmailService {
   async replyToEmail(
     dto: ReplyEmailDto,
     userId: string,
+    companyId: string,
   ): Promise<EmailMessage> {
     const original = await this.messageModel
       .findById(dto.originalMessageId)
@@ -657,6 +669,7 @@ export class EmailService {
       folder: 'SENT',
       linkedEntities: original.linkedEntities || [],
       sentBy: userId,
+      companyId: new Types.ObjectId(companyId),
     });
 
     const savedMessage = await message.save();
@@ -666,7 +679,7 @@ export class EmailService {
       status: EmailStatus.REPLIED,
     });
 
-    this.socketGateway.emitToAll('emailSent', {
+    this.socketGateway.emitToCompany(companyId, 'emailSent', {
       messageId: savedMessage._id,
       to: toAddresses,
       subject,
@@ -680,6 +693,7 @@ export class EmailService {
   async linkEmailToEntity(
     messageId: string,
     dto: LinkEmailDto,
+    companyId: string,
   ): Promise<EmailMessage> {
     const message = await this.messageModel.findById(messageId).exec();
     if (!message) {
@@ -713,7 +727,7 @@ export class EmailService {
       .populate('accountId', 'name emailAddress provider')
       .exec();
 
-    this.socketGateway.emitToAll('emailLinked', {
+    this.socketGateway.emitToCompany(companyId, 'emailLinked', {
       messageId,
       entityType: dto.entityType,
       entityId: dto.entityId,
@@ -754,6 +768,7 @@ export class EmailService {
     clientId: string,
     page: number = 1,
     limit: number = 20,
+    companyId: string,
   ): Promise<{
     data: EmailMessage[];
     total: number;
@@ -761,6 +776,7 @@ export class EmailService {
     limit: number;
   }> {
     const query = {
+      companyId: new Types.ObjectId(companyId),
       linkedEntities: {
         $elemMatch: {
           entityType: 'CLIENT',
@@ -789,6 +805,7 @@ export class EmailService {
     requestId: string,
     page: number = 1,
     limit: number = 20,
+    companyId: string,
   ): Promise<{
     data: EmailMessage[];
     total: number;
@@ -796,6 +813,7 @@ export class EmailService {
     limit: number;
   }> {
     const query = {
+      companyId: new Types.ObjectId(companyId),
       linkedEntities: {
         $elemMatch: {
           entityType: 'REQUEST',
@@ -881,7 +899,7 @@ export class EmailService {
 
   // ==================== STATS ====================
 
-  async getEmailStats(): Promise<{
+  async getEmailStats(companyId: string): Promise<{
     totalAccounts: number;
     totalMessages: number;
     unreadCount: number;
@@ -889,7 +907,7 @@ export class EmailService {
     receivedToday: number;
   }> {
     const accounts = await this.accountModel
-      .find()
+      .find({ companyId: new Types.ObjectId(companyId) })
       .exec();
 
     const accountIds = accounts.map((a) => a._id);

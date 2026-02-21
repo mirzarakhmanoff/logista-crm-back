@@ -8,6 +8,7 @@ import {
   Query,
   UseInterceptors,
   UploadedFiles,
+  ForbiddenException,
 } from '@nestjs/common';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import {
@@ -34,6 +35,12 @@ export class ChatController {
 
   // ==================== CONVERSATIONS ====================
 
+  private requireCompanyId(user: any) {
+    if (!user.companyId) {
+      throw new ForbiddenException('Chat faqat kompaniya foydalanuvchilari uchun');
+    }
+  }
+
   @Post('conversations')
   @ApiOperation({ summary: 'Yangi suhbat yaratish (private yoki group)' })
   @ApiResponse({ status: 201, description: 'Suhbat yaratildi' })
@@ -41,6 +48,7 @@ export class ChatController {
     @Body() dto: CreateConversationDto,
     @CurrentUser() user: any,
   ) {
+    this.requireCompanyId(user);
     return this.chatService.createConversation(dto, user.userId, user.companyId);
   }
 
@@ -52,6 +60,7 @@ export class ChatController {
     @Query() query: GetConversationsDto,
     @CurrentUser() user: any,
   ) {
+    this.requireCompanyId(user);
     return this.chatService.getUserConversations(user.userId, query, user.companyId);
   }
 
@@ -59,6 +68,7 @@ export class ChatController {
   @ApiOperation({ summary: 'Umumiy (default) guruh suhbatni olish' })
   @ApiResponse({ status: 200, description: 'Default guruh qaytarildi' })
   async getDefaultGroup(@CurrentUser() user: any) {
+    this.requireCompanyId(user);
     return this.chatService.getOrCreateDefaultGroup(user.companyId);
   }
 
