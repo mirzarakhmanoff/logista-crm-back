@@ -1,20 +1,31 @@
 /**
  * SUPER_ADMIN user yaratish scripti
  *
+ * .env faylida quyidagilar bo'lishi kerak:
+ *   SUPER_ADMIN_EMAIL=...
+ *   SUPER_ADMIN_FULL_NAME=...
+ *   SUPER_ADMIN_PASSWORD=...
+ *
  * Ishga tushirish:
  *   npx ts-node -r tsconfig-paths/register src/scripts/create-super-admin.ts
  */
 
+import * as dotenv from 'dotenv';
 import * as mongoose from 'mongoose';
 import * as bcrypt from 'bcrypt';
 
+dotenv.config();
+
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/logista-crm';
 
-const SUPER_ADMIN = {
-  email: 'superadmin@logista.uz',
-  fullName: 'Super Admin',
-  password: 'SuperAdmin123!',
-};
+const email = process.env.SUPER_ADMIN_EMAIL;
+const fullName = process.env.SUPER_ADMIN_FULL_NAME;
+const password = process.env.SUPER_ADMIN_PASSWORD;
+
+if (!email || !fullName || !password) {
+  console.error('❌ .env faylida SUPER_ADMIN_EMAIL, SUPER_ADMIN_FULL_NAME va SUPER_ADMIN_PASSWORD bo\'lishi shart');
+  process.exit(1);
+}
 
 async function run() {
   console.log('\n🔧 SUPER_ADMIN user yaratilmoqda...\n');
@@ -23,13 +34,11 @@ async function run() {
   const db = conn.connection.db!;
   const usersCol = db.collection('users');
 
-  // Tekshirish — allaqachon bormi?
-  const existing = await usersCol.findOne({ email: SUPER_ADMIN.email });
+  const existing = await usersCol.findOne({ email: email!.toLowerCase() });
 
   if (existing) {
-    // Borsa — rolini super_admin ga o'zgartir
     await usersCol.updateOne(
-      { email: SUPER_ADMIN.email },
+      { email: email!.toLowerCase() },
       {
         $set: {
           role: 'super_admin',
@@ -39,15 +48,14 @@ async function run() {
         },
       },
     );
-    console.log(`✅ Mavjud user SUPER_ADMIN ga yangilandi: ${SUPER_ADMIN.email}`);
+    console.log(`✅ Mavjud user SUPER_ADMIN ga yangilandi: ${email}`);
   } else {
-    // Yangi user yaratish
-    const hashedPassword = await bcrypt.hash(SUPER_ADMIN.password, 10);
+    const hashedPassword = await bcrypt.hash(password!, 10);
 
     await usersCol.insertOne({
-      email: SUPER_ADMIN.email,
+      email: email!.toLowerCase(),
       password: hashedPassword,
-      fullName: SUPER_ADMIN.fullName,
+      fullName,
       role: 'super_admin',
       isActive: true,
       invitationStatus: 'accepted',
@@ -61,8 +69,7 @@ async function run() {
   }
 
   console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log(`  Email   : ${SUPER_ADMIN.email}`);
-  console.log(`  Parol   : ${SUPER_ADMIN.password}`);
+  console.log(`  Email   : ${email}`);
   console.log(`  Rol     : super_admin`);
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
