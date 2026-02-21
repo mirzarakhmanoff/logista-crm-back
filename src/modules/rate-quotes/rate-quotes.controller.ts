@@ -31,7 +31,8 @@ export class RateQuotesController {
   ) {
     return this.rateQuotesService.create(
       { ...createDto, requestId },
-      user.userId,
+      user.userId || user.sub,
+      user.companyId,
     );
   }
 

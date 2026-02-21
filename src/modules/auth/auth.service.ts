@@ -41,6 +41,7 @@ export class AuthService {
       sub: user._id.toString(),
       email: user.email,
       role: user.role,
+      companyId: user.companyId?.toString(),
     };
 
     return {
@@ -50,6 +51,7 @@ export class AuthService {
         email: user.email,
         fullName: user.fullName,
         role: user.role,
+        companyId: user.companyId?.toString(),
       },
     };
   }
@@ -63,6 +65,7 @@ export class AuthService {
       sub: user._id.toString(),
       email: user.email,
       role: user.role,
+      companyId: user.companyId?.toString(),
     };
 
     return {
@@ -73,6 +76,7 @@ export class AuthService {
         fullName: user.fullName,
         role: user.role,
         mustChangePassword: user.mustChangePassword,
+        companyId: user.companyId?.toString(),
       },
     };
   }
@@ -121,6 +125,7 @@ export class AuthService {
       sub: user._id.toString(),
       email: user.email,
       role: user.role,
+      companyId: user.companyId?.toString(),
     };
 
     return {
@@ -131,6 +136,7 @@ export class AuthService {
         fullName: user.fullName,
         role: user.role,
         mustChangePassword: user.mustChangePassword,
+        companyId: user.companyId?.toString(),
       },
     };
   }

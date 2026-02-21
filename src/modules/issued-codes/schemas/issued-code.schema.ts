@@ -19,7 +19,7 @@ export class IssuedCode extends Document {
   @Prop({ type: Types.ObjectId, ref: 'Request', required: true })
   requestId: Types.ObjectId;
 
-  @Prop({ required: true, unique: true })
+  @Prop({ required: true })
   code: string;
 
   @Prop({ type: String, enum: CodeType, default: CodeType.OTHER })
@@ -48,6 +48,9 @@ export class IssuedCode extends Document {
 
   @Prop({ type: Types.ObjectId, ref: 'User' })
   archivedBy?: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'Company', required: true, index: true })
+  companyId: Types.ObjectId;
 }
 
 export const IssuedCodeSchema = SchemaFactory.createForClass(IssuedCode);
@@ -55,3 +58,4 @@ export const IssuedCodeSchema = SchemaFactory.createForClass(IssuedCode);
 IssuedCodeSchema.index({ requestId: 1, status: 1 });
 IssuedCodeSchema.index({ status: 1 });
 IssuedCodeSchema.index({ isArchived: 1, archivedAt: -1 });
+IssuedCodeSchema.index({ code: 1, companyId: 1 }, { unique: true });

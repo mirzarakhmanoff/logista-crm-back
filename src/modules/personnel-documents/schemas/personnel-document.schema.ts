@@ -20,7 +20,7 @@ export interface PersonnelDocumentFile {
 
 @Schema({ timestamps: true })
 export class PersonnelDocument extends Document {
-  @Prop({ required: true, unique: true })
+  @Prop({ required: true })
   documentNumber: string;
 
   @Prop({ required: true })
@@ -79,6 +79,9 @@ export class PersonnelDocument extends Document {
   @Prop({ type: Types.ObjectId, ref: 'User' })
   archivedBy?: Types.ObjectId;
 
+  @Prop({ type: Types.ObjectId, ref: 'Company', required: true, index: true })
+  companyId: Types.ObjectId;
+
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -118,3 +121,4 @@ PersonnelDocumentSchema.index({
   documentNumber: 'text',
   description: 'text',
 });
+PersonnelDocumentSchema.index({ documentNumber: 1, companyId: 1 }, { unique: true });

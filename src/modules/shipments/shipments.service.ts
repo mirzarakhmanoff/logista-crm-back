@@ -20,7 +20,7 @@ export class ShipmentsService {
     private notificationsService: NotificationsService,
   ) {}
 
-  async create(createDto: CreateShipmentDto, createdById: string): Promise<Shipment> {
+  async create(createDto: CreateShipmentDto, createdById: string, companyId: string): Promise<Shipment> {
     const request = await this.requestModel.findById(createDto.requestId).exec();
     if (!request) {
       throw new NotFoundException(`Request with ID ${createDto.requestId} not found`);
@@ -29,6 +29,7 @@ export class ShipmentsService {
     const shipment = new this.shipmentModel({
       ...createDto,
       createdBy: createdById,
+      companyId: new Types.ObjectId(companyId),
     });
 
     const savedShipment = await shipment.save();
@@ -41,7 +42,7 @@ export class ShipmentsService {
       userId: createdById,
     });
 
-    this.socketGateway.emitToAll('shipmentCreated', savedShipment);
+    this.socketGateway.emitToCompany(companyId, 'shipmentCreated', savedShipment);
 
     this.notificationsService.create({
       type: NotificationType.SHIPMENT_CREATED,
@@ -104,7 +105,7 @@ export class ShipmentsService {
       userId,
     });
 
-    this.socketGateway.emitToAll('shipmentUpdated', populatedShipment);
+    this.socketGateway.emitToCompany(shipment.companyId?.toString(), 'shipmentUpdated', populatedShipment);
 
     this.notificationsService.create({
       type: NotificationType.SHIPMENT_UPDATED,
@@ -128,10 +129,12 @@ export class ShipmentsService {
   }
 
   async remove(id: string): Promise<void> {
-    const result = await this.shipmentModel.findByIdAndDelete(id).exec();
-    if (!result) {
+    const shipment = await this.shipmentModel.findById(id).exec();
+    if (!shipment) {
       throw new NotFoundException(`Shipment with ID ${id} not found`);
     }
-    this.socketGateway.emitToAll('shipmentDeleted', { shipmentId: id });
+    const companyId = shipment.companyId?.toString();
+    await this.shipmentModel.findByIdAndDelete(id).exec();
+    this.socketGateway.emitToCompany(companyId, 'shipmentDeleted', { shipmentId: id });
   }
 }

@@ -15,18 +15,18 @@ export class NotificationsController {
     @CurrentUser() user: any,
     @Query() filterDto: FilterNotificationDto,
   ) {
-    return this.notificationsService.findAll(user.userId, filterDto);
+    return this.notificationsService.findAll(user.userId, filterDto, user.companyId);
   }
 
   @Get('unread-count')
   async getUnreadCount(@CurrentUser() user: any) {
-    const count = await this.notificationsService.getUnreadCount(user.userId);
+    const count = await this.notificationsService.getUnreadCount(user.userId, user.companyId);
     return { count };
   }
 
   @Patch('read-all')
   async markAllAsRead(@CurrentUser() user: any) {
-    await this.notificationsService.markAllAsRead(user.userId);
+    await this.notificationsService.markAllAsRead(user.userId, user.companyId);
     return { success: true };
   }
 

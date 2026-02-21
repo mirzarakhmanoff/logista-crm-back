@@ -40,7 +40,7 @@ export class ClientsService {
     return `${prefix}-${timestamp}-${random}`;
   }
 
-  async create(createClientDto: CreateClientDto, createdById: string): Promise<Client> {
+  async create(createClientDto: CreateClientDto, createdById: string, companyId: string): Promise<Client> {
     const clientType = createClientDto.type || ClientType.CLIENT;
     const clientNumber = createClientDto.clientNumber?.trim() || this.generateClientNumber(clientType);
 
@@ -48,6 +48,7 @@ export class ClientsService {
       ...createClientDto,
       clientNumber,
       createdBy: createdById,
+      companyId: new Types.ObjectId(companyId),
     });
 
     const savedClient = await client.save();
@@ -61,7 +62,7 @@ export class ClientsService {
       throw new NotFoundException('Failed to create client');
     }
 
-    this.socketGateway.emitToAll('clientCreated', populatedClient);
+    this.socketGateway.emitToCompany(companyId, 'clientCreated', populatedClient);
 
     this.notificationsService.create({
       type: NotificationType.CLIENT_CREATED,
@@ -70,13 +71,15 @@ export class ClientsService {
       entityType: 'CLIENT',
       entityId: populatedClient._id.toString(),
       createdBy: createdById,
+      companyId,
     });
 
     return populatedClient;
   }
 
-  async findAll(filterDto: FilterClientDto): Promise<{ data: Client[]; total: number; page: number; limit: number }> {
+  async findAll(filterDto: FilterClientDto, companyId: string): Promise<{ data: Client[]; total: number; page: number; limit: number }> {
     const query: any = {
+      companyId: new Types.ObjectId(companyId),
       isArchived: { $ne: true },
     };
     const page = filterDto.page || 1;
@@ -133,7 +136,7 @@ export class ClientsService {
       throw new NotFoundException(`Client with ID ${id} not found`);
     }
 
-    this.socketGateway.emitToAll('clientUpdated', client);
+    this.socketGateway.emitToCompany(client.companyId?.toString(), 'clientUpdated', client);
 
     this.notificationsService.create({
       type: NotificationType.CLIENT_UPDATED,
@@ -172,7 +175,7 @@ export class ClientsService {
       throw new NotFoundException(`Client with ID ${id} not found`);
     }
 
-    this.socketGateway.emitToAll('clientUpdated', updatedClient);
+    this.socketGateway.emitToCompany(updatedClient.companyId?.toString(), 'clientUpdated', updatedClient);
 
     return updatedClient;
   }
@@ -199,7 +202,7 @@ export class ClientsService {
       throw new NotFoundException(`Client with ID ${id} not found`);
     }
 
-    this.socketGateway.emitToAll('clientUpdated', updatedClient);
+    this.socketGateway.emitToCompany(updatedClient.companyId?.toString(), 'clientUpdated', updatedClient);
 
     return updatedClient;
   }
@@ -221,7 +224,7 @@ export class ClientsService {
 
     await this.clientModel.findByIdAndDelete(id).exec();
 
-    this.socketGateway.emitToAll('clientDeleted', { clientId: id });
+    this.socketGateway.emitToCompany(client.companyId?.toString(), 'clientDeleted', { clientId: id });
   }
 
   async findOneWithAllRelations(id: string): Promise<any> {

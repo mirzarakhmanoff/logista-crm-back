@@ -29,6 +29,7 @@ export class OperationalPaymentsService {
     createDto: CreateOperationalPaymentDto,
     files: Array<Express.Multer.File>,
     createdById: string,
+    companyId: string,
   ): Promise<OperationalPayment> {
     // Generate payment number
     const paymentNumber = await this.generatePaymentNumber();
@@ -49,6 +50,7 @@ export class OperationalPaymentsService {
       createdBy: new Types.ObjectId(createdById),
       currency: createDto.currency || 'RUB',
       files: filesData,
+      companyId: new Types.ObjectId(companyId),
     });
 
     const saved = await payment.save();
@@ -63,7 +65,7 @@ export class OperationalPaymentsService {
     });
 
     // Emit socket event
-    this.socketGateway.emitToAll('paymentCreated', saved);
+    this.socketGateway.emitToCompany(companyId, 'paymentCreated', saved);
 
     this.notificationsService.create({
       type: NotificationType.PAYMENT_CREATED,
@@ -77,7 +79,7 @@ export class OperationalPaymentsService {
     return this.findOne(saved._id.toString());
   }
 
-  async findAll(filterDto: FilterOperationalPaymentDto): Promise<any> {
+  async findAll(filterDto: FilterOperationalPaymentDto, companyId: string): Promise<any> {
     const {
       status,
       category,
@@ -89,7 +91,7 @@ export class OperationalPaymentsService {
       limit = 25,
     } = filterDto;
 
-    const query: any = { isArchived: { $ne: true } };
+    const query: any = { companyId: new Types.ObjectId(companyId), isArchived: { $ne: true } };
 
     if (status) {
       query.status = status;
@@ -224,7 +226,7 @@ export class OperationalPaymentsService {
     });
 
     // Emit socket event
-    this.socketGateway.emitToAll('paymentUpdated', updated);
+    this.socketGateway.emitToCompany(payment.companyId?.toString(), 'paymentUpdated', updated);
 
     if (updateDto.status) {
       this.notificationsService.create({
@@ -259,7 +261,7 @@ export class OperationalPaymentsService {
     });
 
     // Emit socket event
-    this.socketGateway.emitToAll('paymentDeleted', { id });
+    this.socketGateway.emitToCompany(payment.companyId?.toString(), 'paymentDeleted', { id });
   }
 
   async getStatistics(): Promise<any> {

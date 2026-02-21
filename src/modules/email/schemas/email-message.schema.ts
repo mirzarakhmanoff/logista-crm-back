@@ -93,6 +93,9 @@ export class EmailMessage extends Document {
 
   @Prop({ type: Types.ObjectId, ref: 'User' })
   sentBy?: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'Company', required: true, index: true })
+  companyId: Types.ObjectId;
 }
 
 export const EmailMessageSchema =

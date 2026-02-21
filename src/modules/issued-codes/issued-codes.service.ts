@@ -17,7 +17,7 @@ export class IssuedCodesService {
     private activityLogsService: ActivityLogsService,
   ) {}
 
-  async create(createDto: CreateIssuedCodeDto, issuedById: string): Promise<IssuedCode> {
+  async create(createDto: CreateIssuedCodeDto, issuedById: string, companyId: string): Promise<IssuedCode> {
     const request = await this.requestModel.findById(createDto.requestId).exec();
     if (!request) {
       throw new NotFoundException(`Request with ID ${createDto.requestId} not found`);
@@ -33,6 +33,7 @@ export class IssuedCodesService {
       requestId: new Types.ObjectId(createDto.requestId),
       issuedBy: new Types.ObjectId(issuedById),
       issuedAt: new Date(),
+      companyId: new Types.ObjectId(companyId),
     });
 
     const savedCode = await issuedCode.save();
@@ -45,7 +46,7 @@ export class IssuedCodesService {
       userId: issuedById,
     });
 
-    this.socketGateway.emitToAll('issuedCodeCreated', savedCode);
+    this.socketGateway.emitToCompany(companyId, 'issuedCodeCreated', savedCode);
 
     return savedCode;
   }
@@ -108,7 +109,7 @@ export class IssuedCodesService {
       userId,
     });
 
-    this.socketGateway.emitToAll('issuedCodeUpdated', populatedCode);
+    this.socketGateway.emitToCompany(code.companyId?.toString(), 'issuedCodeUpdated', populatedCode);
 
     return populatedCode;
   }
@@ -123,10 +124,12 @@ export class IssuedCodesService {
   }
 
   async remove(id: string): Promise<void> {
-    const result = await this.issuedCodeModel.findByIdAndDelete(id).exec();
-    if (!result) {
+    const code = await this.issuedCodeModel.findById(id).exec();
+    if (!code) {
       throw new NotFoundException(`Issued code with ID ${id} not found`);
     }
-    this.socketGateway.emitToAll('issuedCodeDeleted', { codeId: id });
+    const companyId = code.companyId?.toString();
+    await this.issuedCodeModel.findByIdAndDelete(id).exec();
+    this.socketGateway.emitToCompany(companyId, 'issuedCodeDeleted', { codeId: id });
   }
 }

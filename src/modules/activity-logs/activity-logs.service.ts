@@ -10,7 +10,7 @@ export class ActivityLogsService {
     @InjectModel(ActivityLog.name) private activityLogModel: Model<ActivityLog>,
   ) {}
 
-  async log(dto: CreateActivityLogDto): Promise<ActivityLog> {
+  async log(dto: CreateActivityLogDto & { companyId?: string }): Promise<ActivityLog> {
     const log = new this.activityLogModel({
       entityType: dto.entityType,
       entityId: new Types.ObjectId(dto.entityId),
@@ -18,6 +18,7 @@ export class ActivityLogsService {
       message: dto.message,
       userId: dto.userId ? new Types.ObjectId(dto.userId) : undefined,
       metadata: dto.metadata,
+      companyId: dto.companyId ? new Types.ObjectId(dto.companyId) : undefined,
     });
     return log.save();
   }
@@ -40,9 +41,13 @@ export class ActivityLogsService {
       .exec();
   }
 
-  async findRecent(limit = 100): Promise<ActivityLog[]> {
+  async findRecent(limit = 100, companyId?: string): Promise<ActivityLog[]> {
+    const query: any = {};
+    if (companyId) {
+      query.companyId = new Types.ObjectId(companyId);
+    }
     return this.activityLogModel
-      .find()
+      .find(query)
       .populate('userId', 'fullName email avatar')
       .sort({ createdAt: -1 })
       .limit(limit)

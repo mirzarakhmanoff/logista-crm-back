@@ -63,12 +63,15 @@ export class EmailAccount extends Document {
 
   @Prop({ type: [{ type: Types.ObjectId, ref: 'User' }], default: [] })
   sharedWith: Types.ObjectId[];
+
+  @Prop({ type: Types.ObjectId, ref: 'Company', required: true, index: true })
+  companyId: Types.ObjectId;
 }
 
 export const EmailAccountSchema =
   SchemaFactory.createForClass(EmailAccount);
 
-EmailAccountSchema.index({ emailAddress: 1 }, { unique: true });
+EmailAccountSchema.index({ emailAddress: 1, companyId: 1 }, { unique: true });
 EmailAccountSchema.index({ provider: 1 });
 EmailAccountSchema.index({ createdBy: 1 });
 EmailAccountSchema.index({ status: 1, syncEnabled: 1 });

@@ -32,7 +32,8 @@ export class InvoicesController {
   ) {
     return this.invoicesService.create(
       { ...createDto, requestId },
-      user.userId,
+      user.userId || user.sub,
+      user.companyId,
     );
   }
 

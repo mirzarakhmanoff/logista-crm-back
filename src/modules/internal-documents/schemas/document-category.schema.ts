@@ -29,6 +29,9 @@ export class DocumentCategory extends Document {
   @Prop({ default: false })
   isArchived: boolean;
 
+  @Prop({ type: Types.ObjectId, ref: 'Company', required: true, index: true })
+  companyId: Types.ObjectId;
+
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -36,5 +39,5 @@ export class DocumentCategory extends Document {
 export const DocumentCategorySchema =
   SchemaFactory.createForClass(DocumentCategory);
 
-DocumentCategorySchema.index({ name: 1 }, { unique: true });
+DocumentCategorySchema.index({ name: 1, companyId: 1 }, { unique: true });
 DocumentCategorySchema.index({ isArchived: 1 });

@@ -129,7 +129,7 @@ export class ArchiveService {
     };
   }
 
-  async getArchivedItems(query: ArchiveQueryDto): Promise<{
+  async getArchivedItems(query: ArchiveQueryDto, companyId: string): Promise<{
     items: ArchiveItemDto[];
     total: number;
     page: number;
@@ -150,6 +150,7 @@ export class ArchiveService {
 
     const baseFilter: any = {
       isArchived: true,
+      companyId: new Types.ObjectId(companyId),
       ...dateFilter,
     };
 
@@ -422,7 +423,8 @@ export class ArchiveService {
     };
   }
 
-  async getArchiveStats(): Promise<any> {
+  async getArchiveStats(companyId: string): Promise<any> {
+    const cid = new Types.ObjectId(companyId);
     const [
       clientsCount,
       requestsCount,
@@ -432,13 +434,13 @@ export class ArchiveService {
       rateQuotesCount,
       issuedCodesCount,
     ] = await Promise.all([
-      this.clientModel.countDocuments({ isArchived: true }),
-      this.requestModel.countDocuments({ isArchived: true }),
-      this.documentModel.countDocuments({ isArchived: true }),
-      this.invoiceModel.countDocuments({ isArchived: true }),
-      this.shipmentModel.countDocuments({ isArchived: true }),
-      this.rateQuoteModel.countDocuments({ isArchived: true }),
-      this.issuedCodeModel.countDocuments({ isArchived: true }),
+      this.clientModel.countDocuments({ isArchived: true, companyId: cid }),
+      this.requestModel.countDocuments({ isArchived: true, companyId: cid }),
+      this.documentModel.countDocuments({ isArchived: true, companyId: cid }),
+      this.invoiceModel.countDocuments({ isArchived: true, companyId: cid }),
+      this.shipmentModel.countDocuments({ isArchived: true, companyId: cid }),
+      this.rateQuoteModel.countDocuments({ isArchived: true, companyId: cid }),
+      this.issuedCodeModel.countDocuments({ isArchived: true, companyId: cid }),
     ]);
 
     const total =

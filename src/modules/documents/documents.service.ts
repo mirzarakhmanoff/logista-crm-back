@@ -4,7 +4,7 @@ import {
 } from '@nestjs/common';
 import * as fs from 'fs';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Document, DocumentStatus } from './schemas/document.schema';
 import { CreateDocumentDto } from './dto/create-document.dto';
 import { UpdateDocumentDto } from './dto/update-document.dto';
@@ -27,6 +27,7 @@ export class DocumentsService {
   async create(
     createDocumentDto: CreateDocumentDto,
     createdById: string,
+    companyId: string,
   ): Promise<Document> {
     let savedDocument!: Document;
     const maxRetries = 3;
@@ -36,6 +37,7 @@ export class DocumentsService {
         const document = new this.documentModel({
           ...createDocumentDto,
           createdBy: createdById,
+          companyId: new Types.ObjectId(companyId),
         });
         savedDocument = await document.save();
         break;
@@ -57,7 +59,7 @@ export class DocumentsService {
       throw new NotFoundException('Failed to create document');
     }
 
-    this.socketGateway.emitToAll('documentCreated', populatedDocument);
+    this.socketGateway.emitToCompany(companyId, 'documentCreated', populatedDocument);
 
     this.notificationsService.create({
       type: NotificationType.DOCUMENT_CREATED,
@@ -71,8 +73,8 @@ export class DocumentsService {
     return populatedDocument;
   }
 
-  async findAll(filterDto: FilterDocumentDto): Promise<Document[]> {
-    const query: any = {};
+  async findAll(filterDto: FilterDocumentDto, companyId: string): Promise<Document[]> {
+    const query: any = { companyId: new Types.ObjectId(companyId) };
 
     if (filterDto.isArchived !== undefined) {
       query.isArchived = filterDto.isArchived;
@@ -143,7 +145,7 @@ export class DocumentsService {
       userId,
     });
 
-    this.socketGateway.emitToAll('documentUpdated', document);
+    this.socketGateway.emitToCompany(document.companyId?.toString(), 'documentUpdated', document);
 
     this.notificationsService.create({
       type: NotificationType.DOCUMENT_UPDATED,
@@ -197,7 +199,7 @@ export class DocumentsService {
       userId,
     });
 
-    this.socketGateway.emitToAll('documentStatusChanged', {
+    this.socketGateway.emitToCompany(updatedDocument.companyId?.toString(), 'documentStatusChanged', {
       documentId: id,
       oldStatus,
       newStatus: updateStatusDto.status,
@@ -217,13 +219,16 @@ export class DocumentsService {
   }
 
   async remove(id: string): Promise<void> {
-    const result = await this.documentModel.findByIdAndDelete(id).exec();
+    const document = await this.documentModel.findById(id).exec();
 
-    if (!result) {
+    if (!document) {
       throw new NotFoundException(`Document with ID ${id} not found`);
     }
 
-    this.socketGateway.emitToAll('documentDeleted', { documentId: id });
+    const companyId = document.companyId?.toString();
+    await this.documentModel.findByIdAndDelete(id).exec();
+
+    this.socketGateway.emitToCompany(companyId, 'documentDeleted', { documentId: id });
   }
 
   async addFiles(
@@ -272,7 +277,7 @@ export class DocumentsService {
         userId: fileData.uploadedBy,
       });
 
-      this.socketGateway.emitToAll('fileUploaded', {
+      this.socketGateway.emitToCompany(document.companyId?.toString(), 'fileUploaded', {
         documentId: id,
         filename: fileData.filename,
         document,
@@ -320,7 +325,7 @@ export class DocumentsService {
       userId,
     });
 
-    this.socketGateway.emitToAll('fileDeleted', {
+    this.socketGateway.emitToCompany(doc.companyId?.toString(), 'fileDeleted', {
       documentId,
       fileId,
       filename: fileName,
@@ -410,7 +415,7 @@ export class DocumentsService {
 
     const populatedComment = await comment.populate('userId', 'fullName email avatar');
 
-    this.socketGateway.emitToAll('documentCommentAdded', {
+    this.socketGateway.emitToCompany(document.companyId?.toString(), 'documentCommentAdded', {
       documentId,
       comment: populatedComment,
     });

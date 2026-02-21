@@ -33,14 +33,14 @@ export class ArchiveController {
 
   @Get()
   @ApiOperation({ summary: 'Get all archived items with filters' })
-  async getArchivedItems(@Query() query: ArchiveQueryDto) {
-    return this.archiveService.getArchivedItems(query);
+  async getArchivedItems(@Query() query: ArchiveQueryDto, @CurrentUser() user: any) {
+    return this.archiveService.getArchivedItems(query, user.companyId);
   }
 
   @Get('stats')
   @ApiOperation({ summary: 'Get archive statistics by category' })
-  async getArchiveStats() {
-    return this.archiveService.getArchiveStats();
+  async getArchiveStats(@CurrentUser() user: any) {
+    return this.archiveService.getArchiveStats(user.companyId);
   }
 
   @Get(':category/:id')

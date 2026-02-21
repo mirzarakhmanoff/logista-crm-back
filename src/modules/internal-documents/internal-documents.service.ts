@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import * as fs from 'fs';
 import { DocumentCategory } from './schemas/document-category.schema';
 import {
@@ -145,6 +145,7 @@ export class InternalDocumentsService {
   async createDocument(
     dto: CreateInternalDocumentDto,
     userId: string,
+    companyId: string,
   ): Promise<InternalDocument> {
     let savedDocument!: InternalDocument;
     const maxRetries = 3;
@@ -154,6 +155,7 @@ export class InternalDocumentsService {
         const document = new this.documentModel({
           ...dto,
           createdBy: userId,
+          companyId: new Types.ObjectId(companyId),
         });
         savedDocument = await document.save();
         break;
@@ -184,7 +186,7 @@ export class InternalDocumentsService {
       userId,
     });
 
-    this.socketGateway.emitToAll('internalDocumentCreated', populated);
+    this.socketGateway.emitToCompany(companyId, 'internalDocumentCreated', populated);
 
     this.notificationsService.create({
       type: NotificationType.INTERNAL_DOC_CREATED,
@@ -200,8 +202,9 @@ export class InternalDocumentsService {
 
   async findAllDocuments(
     filterDto: FilterInternalDocumentDto,
+    companyId: string,
   ): Promise<InternalDocument[]> {
-    const query: any = {};
+    const query: any = { companyId: new Types.ObjectId(companyId) };
 
     if (filterDto.isArchived !== undefined) {
       query.isArchived = filterDto.isArchived;
@@ -278,7 +281,7 @@ export class InternalDocumentsService {
       userId,
     });
 
-    this.socketGateway.emitToAll('internalDocumentUpdated', document);
+    this.socketGateway.emitToCompany(document.companyId?.toString(), 'internalDocumentUpdated', document);
 
     this.notificationsService.create({
       type: NotificationType.INTERNAL_DOC_UPDATED,
@@ -334,7 +337,7 @@ export class InternalDocumentsService {
       userId,
     });
 
-    this.socketGateway.emitToAll('internalDocumentStatusChanged', {
+    this.socketGateway.emitToCompany(updated.companyId?.toString(), 'internalDocumentStatusChanged', {
       documentId: id,
       oldStatus,
       newStatus: dto.status,
@@ -345,12 +348,15 @@ export class InternalDocumentsService {
   }
 
   async removeDocument(id: string): Promise<void> {
-    const result = await this.documentModel.findByIdAndDelete(id).exec();
-    if (!result) {
+    const document = await this.documentModel.findById(id).exec();
+    if (!document) {
       throw new NotFoundException(`Document with ID ${id} not found`);
     }
 
-    this.socketGateway.emitToAll('internalDocumentDeleted', {
+    const companyId = document.companyId?.toString();
+    await this.documentModel.findByIdAndDelete(id).exec();
+
+    this.socketGateway.emitToCompany(companyId, 'internalDocumentDeleted', {
       documentId: id,
     });
   }
@@ -443,7 +449,7 @@ export class InternalDocumentsService {
       });
     }
 
-    this.socketGateway.emitToAll('internalDocumentFileUploaded', {
+    this.socketGateway.emitToCompany(document.companyId?.toString(), 'internalDocumentFileUploaded', {
       documentId: id,
       document,
     });
@@ -515,7 +521,7 @@ export class InternalDocumentsService {
       userId,
     });
 
-    this.socketGateway.emitToAll('internalDocumentFileDeleted', {
+    this.socketGateway.emitToCompany(doc.companyId?.toString(), 'internalDocumentFileDeleted', {
       documentId,
       fileId,
       filename: fileName,
@@ -558,7 +564,7 @@ export class InternalDocumentsService {
       'fullName email avatar',
     );
 
-    this.socketGateway.emitToAll('internalDocumentCommentAdded', {
+    this.socketGateway.emitToCompany(document.companyId?.toString(), 'internalDocumentCommentAdded', {
       documentId,
       comment: populatedComment,
     });

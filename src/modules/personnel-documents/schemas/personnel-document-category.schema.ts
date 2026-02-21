@@ -33,6 +33,9 @@ export class PersonnelDocumentCategory extends Document {
   @Prop({ default: false })
   isArchived: boolean;
 
+  @Prop({ type: Types.ObjectId, ref: 'Company', required: true, index: true })
+  companyId: Types.ObjectId;
+
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -40,6 +43,6 @@ export class PersonnelDocumentCategory extends Document {
 export const PersonnelDocumentCategorySchema =
   SchemaFactory.createForClass(PersonnelDocumentCategory);
 
-PersonnelDocumentCategorySchema.index({ name: 1 }, { unique: true });
+PersonnelDocumentCategorySchema.index({ name: 1, companyId: 1 }, { unique: true });
 PersonnelDocumentCategorySchema.index({ isArchived: 1 });
 PersonnelDocumentCategorySchema.index({ type: 1 });

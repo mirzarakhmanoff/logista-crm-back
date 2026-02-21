@@ -13,7 +13,7 @@ export class NotificationsService {
     private socketGateway: SocketGateway,
   ) {}
 
-  async create(dto: CreateNotificationDto): Promise<Notification> {
+  async create(dto: CreateNotificationDto & { companyId?: string }): Promise<Notification> {
     const notification = new this.notificationModel({
       type: dto.type,
       title: dto.title,
@@ -22,6 +22,7 @@ export class NotificationsService {
       entityId: new Types.ObjectId(dto.entityId),
       createdBy: dto.createdBy ? new Types.ObjectId(dto.createdBy) : undefined,
       metadata: dto.metadata,
+      companyId: dto.companyId ? new Types.ObjectId(dto.companyId) : undefined,
     });
 
     const saved = await notification.save();
@@ -31,7 +32,9 @@ export class NotificationsService {
       .populate('createdBy', 'fullName email avatar')
       .exec();
 
-    this.socketGateway.emitNewNotification(populated);
+    if (dto.companyId) {
+      this.socketGateway.emitNewNotification(dto.companyId, populated);
+    }
 
     return populated!;
   }
@@ -39,6 +42,7 @@ export class NotificationsService {
   async findAll(
     userId: string,
     filterDto: FilterNotificationDto,
+    companyId?: string,
   ): Promise<{ data: any[]; total: number; page: number; limit: number; unreadCount: number }> {
     const page = filterDto.page || 1;
     const limit = filterDto.limit || 20;
@@ -46,6 +50,9 @@ export class NotificationsService {
     const userObjectId = new Types.ObjectId(userId);
 
     const query: any = { createdBy: { $ne: userObjectId } };
+    if (companyId) {
+      query.companyId = new Types.ObjectId(companyId);
+    }
 
     if (filterDto.unreadOnly) {
       query.readBy = { $ne: userObjectId };
@@ -62,6 +69,7 @@ export class NotificationsService {
         .exec(),
       this.notificationModel.countDocuments(query),
       this.notificationModel.countDocuments({
+        ...(companyId ? { companyId: new Types.ObjectId(companyId) } : {}),
         createdBy: { $ne: userObjectId },
         readBy: { $ne: userObjectId },
       }),
@@ -78,12 +86,16 @@ export class NotificationsService {
     return { data: mapped, total, page, limit, unreadCount };
   }
 
-  async getUnreadCount(userId: string): Promise<number> {
+  async getUnreadCount(userId: string, companyId?: string): Promise<number> {
     const userObjectId = new Types.ObjectId(userId);
-    return this.notificationModel.countDocuments({
+    const query: any = {
       createdBy: { $ne: userObjectId },
       readBy: { $ne: userObjectId },
-    });
+    };
+    if (companyId) {
+      query.companyId = new Types.ObjectId(companyId);
+    }
+    return this.notificationModel.countDocuments(query);
   }
 
   async markAsRead(notificationId: string, userId: string): Promise<any> {
@@ -106,11 +118,15 @@ export class NotificationsService {
     };
   }
 
-  async markAllAsRead(userId: string): Promise<void> {
+  async markAllAsRead(userId: string, companyId?: string): Promise<void> {
     const userObjectId = new Types.ObjectId(userId);
+    const filter: any = { readBy: { $ne: userObjectId } };
+    if (companyId) {
+      filter.companyId = new Types.ObjectId(companyId);
+    }
 
     await this.notificationModel.updateMany(
-      { readBy: { $ne: userObjectId } },
+      filter,
       { $addToSet: { readBy: userObjectId } },
     );
   }

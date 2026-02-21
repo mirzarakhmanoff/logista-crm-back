@@ -17,4 +17,5 @@ export interface IJwtPayload {
   sub: string;
   email: string;
   role: UserRole;
+  companyId?: string;
 }

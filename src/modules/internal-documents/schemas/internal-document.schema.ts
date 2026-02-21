@@ -23,7 +23,7 @@ export interface InternalDocumentFile {
 
 @Schema({ timestamps: true })
 export class InternalDocument extends Document {
-  @Prop({ required: true, unique: true })
+  @Prop({ required: true })
   documentNumber: string;
 
   @Prop({ required: true })
@@ -96,6 +96,9 @@ export class InternalDocument extends Document {
   @Prop({ type: Types.ObjectId, ref: 'User' })
   archivedBy?: Types.ObjectId;
 
+  @Prop({ type: Types.ObjectId, ref: 'Company', required: true, index: true })
+  companyId: Types.ObjectId;
+
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -132,3 +135,4 @@ InternalDocumentSchema.index({ isArchived: 1, archivedAt: -1 });
 InternalDocumentSchema.index({ status: 1, createdAt: -1 });
 InternalDocumentSchema.index({ counterparty: 'text', title: 'text', documentNumber: 'text' });
 InternalDocumentSchema.index({ dueDate: 1 });
+InternalDocumentSchema.index({ documentNumber: 1, companyId: 1 }, { unique: true });

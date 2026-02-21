@@ -21,7 +21,7 @@ export class InvoicesService {
     private notificationsService: NotificationsService,
   ) {}
 
-  async create(createDto: CreateInvoiceDto, createdById: string): Promise<Invoice> {
+  async create(createDto: CreateInvoiceDto, createdById: string, companyId: string): Promise<Invoice> {
     const request = await this.requestModel.findById(createDto.requestId).exec();
     if (!request) {
       throw new NotFoundException(`Request with ID ${createDto.requestId} not found`);
@@ -31,6 +31,7 @@ export class InvoicesService {
       ...createDto,
       createdBy: createdById,
       issuedAt: createDto.issuedAt || new Date(),
+      companyId: new Types.ObjectId(companyId),
     });
 
     const savedInvoice = await invoice.save();
@@ -43,7 +44,7 @@ export class InvoicesService {
       userId: createdById,
     });
 
-    this.socketGateway.emitToAll('invoiceCreated', savedInvoice);
+    this.socketGateway.emitToCompany(companyId, 'invoiceCreated', savedInvoice);
 
     this.notificationsService.create({
       type: NotificationType.INVOICE_CREATED,
@@ -97,7 +98,7 @@ export class InvoicesService {
       userId,
     });
 
-    this.socketGateway.emitToAll('invoiceUpdated', invoice);
+    this.socketGateway.emitToCompany(invoice.companyId?.toString(), 'invoiceUpdated', invoice);
 
     this.notificationsService.create({
       type: NotificationType.INVOICE_UPDATED,
@@ -152,7 +153,7 @@ export class InvoicesService {
       userId,
     });
 
-    this.socketGateway.emitToAll('invoicePaid', populatedInvoice);
+    this.socketGateway.emitToCompany(invoice.companyId?.toString(), 'invoicePaid', populatedInvoice);
 
     this.notificationsService.create({
       type: NotificationType.INVOICE_PAID,
@@ -179,10 +180,12 @@ export class InvoicesService {
   }
 
   async remove(id: string): Promise<void> {
-    const result = await this.invoiceModel.findByIdAndDelete(id).exec();
-    if (!result) {
+    const invoice = await this.invoiceModel.findById(id).exec();
+    if (!invoice) {
       throw new NotFoundException(`Invoice with ID ${id} not found`);
     }
-    this.socketGateway.emitToAll('invoiceDeleted', { invoiceId: id });
+    const companyId = invoice.companyId?.toString();
+    await this.invoiceModel.findByIdAndDelete(id).exec();
+    this.socketGateway.emitToCompany(companyId, 'invoiceDeleted', { invoiceId: id });
   }
 }

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import * as fs from 'fs';
 import { PersonnelDocumentCategory } from './schemas/personnel-document-category.schema';
 import {
@@ -139,6 +139,7 @@ export class PersonnelDocumentsService {
   async createDocument(
     dto: CreatePersonnelDocumentDto,
     userId: string,
+    companyId: string,
   ): Promise<PersonnelDocument> {
     let savedDocument!: PersonnelDocument;
     const maxRetries = 3;
@@ -148,6 +149,7 @@ export class PersonnelDocumentsService {
         const document = new this.documentModel({
           ...dto,
           createdBy: userId,
+          companyId: new Types.ObjectId(companyId),
         });
         savedDocument = await document.save();
         break;
@@ -178,7 +180,7 @@ export class PersonnelDocumentsService {
       userId,
     });
 
-    this.socketGateway.emitToAll('personnelDocumentCreated', populated);
+    this.socketGateway.emitToCompany(companyId, 'personnelDocumentCreated', populated);
 
     this.notificationsService.create({
       type: NotificationType.PERSONNEL_DOC_CREATED,
@@ -194,8 +196,9 @@ export class PersonnelDocumentsService {
 
   async findAllDocuments(
     filterDto: FilterPersonnelDocumentDto,
+    companyId: string,
   ): Promise<{ data: PersonnelDocument[]; total: number; page: number; limit: number }> {
-    const query: any = {};
+    const query: any = { companyId: new Types.ObjectId(companyId) };
     const page = filterDto.page || 1;
     const limit = filterDto.limit || 20;
     const skip = (page - 1) * limit;
@@ -278,7 +281,7 @@ export class PersonnelDocumentsService {
       userId,
     });
 
-    this.socketGateway.emitToAll('personnelDocumentUpdated', document);
+    this.socketGateway.emitToCompany(document.companyId?.toString(), 'personnelDocumentUpdated', document);
 
     this.notificationsService.create({
       type: NotificationType.PERSONNEL_DOC_UPDATED,
@@ -331,7 +334,7 @@ export class PersonnelDocumentsService {
       userId,
     });
 
-    this.socketGateway.emitToAll('personnelDocumentStatusChanged', {
+    this.socketGateway.emitToCompany(updated.companyId?.toString(), 'personnelDocumentStatusChanged', {
       documentId: id,
       oldStatus,
       newStatus: dto.status,
@@ -342,12 +345,15 @@ export class PersonnelDocumentsService {
   }
 
   async removeDocument(id: string): Promise<void> {
-    const result = await this.documentModel.findByIdAndDelete(id).exec();
-    if (!result) {
+    const document = await this.documentModel.findById(id).exec();
+    if (!document) {
       throw new NotFoundException(`Document with ID ${id} not found`);
     }
 
-    this.socketGateway.emitToAll('personnelDocumentDeleted', {
+    const companyId = document.companyId?.toString();
+    await this.documentModel.findByIdAndDelete(id).exec();
+
+    this.socketGateway.emitToCompany(companyId, 'personnelDocumentDeleted', {
       documentId: id,
     });
   }
@@ -431,7 +437,7 @@ export class PersonnelDocumentsService {
       });
     }
 
-    this.socketGateway.emitToAll('personnelDocumentFileUploaded', {
+    this.socketGateway.emitToCompany(document.companyId?.toString(), 'personnelDocumentFileUploaded', {
       documentId: id,
       document,
     });
@@ -503,7 +509,7 @@ export class PersonnelDocumentsService {
       userId,
     });
 
-    this.socketGateway.emitToAll('personnelDocumentFileDeleted', {
+    this.socketGateway.emitToCompany(doc.companyId?.toString(), 'personnelDocumentFileDeleted', {
       documentId,
       fileId,
       filename: fileName,
@@ -546,7 +552,7 @@ export class PersonnelDocumentsService {
       'fullName email avatar',
     );
 
-    this.socketGateway.emitToAll('personnelDocumentCommentAdded', {
+    this.socketGateway.emitToCompany(document.companyId?.toString(), 'personnelDocumentCommentAdded', {
       documentId,
       comment: populatedComment,
     });

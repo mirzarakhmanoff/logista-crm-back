@@ -124,14 +124,14 @@ export class InternalDocumentsController {
     @Body() dto: CreateInternalDocumentDto,
     @CurrentUser() user: any,
   ) {
-    return this.service.createDocument(dto, user.userId);
+    return this.service.createDocument(dto, user.userId || user.sub, user.companyId);
   }
 
   @Get()
   @ApiOperation({ summary: 'Get all internal documents with filters' })
   @ApiResponse({ status: 200, description: 'List of documents' })
-  async findAllDocuments(@Query() filterDto: FilterInternalDocumentDto) {
-    return this.service.findAllDocuments(filterDto);
+  async findAllDocuments(@Query() filterDto: FilterInternalDocumentDto, @CurrentUser() user: any) {
+    return this.service.findAllDocuments(filterDto, user.companyId);
   }
 
   @Get(':id')

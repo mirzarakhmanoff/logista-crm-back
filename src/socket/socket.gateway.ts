@@ -9,6 +9,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 
 @WebSocketGateway({
   cors: {
@@ -23,12 +24,42 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private logger: Logger = new Logger('SocketGateway');
 
+  constructor(private jwtService: JwtService) {}
+
   handleConnection(client: Socket) {
-    this.logger.log(`Client connected: ${client.id}`);
+    try {
+      const token =
+        client.handshake.auth?.token ||
+        client.handshake.headers?.authorization?.replace('Bearer ', '');
+
+      if (token) {
+        const payload = this.jwtService.verify(token);
+        const companyId = payload?.companyId;
+        if (companyId) {
+          client.join(`company-${companyId}`);
+          client.data.companyId = companyId;
+          this.logger.log(`Client ${client.id} connected → company-${companyId}`);
+          return;
+        }
+      }
+    } catch {
+      // invalid token — still connect, just no company room
+    }
+    this.logger.log(`Client connected (no company): ${client.id}`);
   }
 
   handleDisconnect(client: Socket) {
     this.logger.log(`Client disconnected: ${client.id}`);
+  }
+
+  // Company-scoped broadcast (asosiy method)
+  emitToCompany(companyId: string, event: string, data: any) {
+    this.server.to(`company-${companyId}`).emit(event, data);
+  }
+
+  // Backward-compat: hali companyId berilmagan joylarda ishlaydi
+  emitToAll(event: string, data: any) {
+    this.server.emit(event, data);
   }
 
   // Client dokumentga join bo'ladi (room)
@@ -51,11 +82,6 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.leave(`document-${documentId}`);
     this.logger.log(`Client ${client.id} left document-${documentId}`);
     return { event: 'leftDocument', data: documentId };
-  }
-
-  // Barcha clientlarga xabar (broadcast)
-  emitToAll(event: string, data: any) {
-    this.server.emit(event, data);
   }
 
   // Ma'lum bir dokumentga tegishli clientlarga xabar
@@ -99,22 +125,21 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.logger.log(`File deleted from document ${documentId}`);
   }
 
-  // Yangi dokument yaratilganda (global)
-  emitDocumentCreated(data: any) {
-    this.emitToAll('documentCreated', data);
+  // Yangi dokument yaratilganda
+  emitDocumentCreated(companyId: string, data: any) {
+    this.emitToCompany(companyId, 'documentCreated', data);
     this.logger.log(`New document created: ${data._id}`);
   }
 
-  // Dokument o'chirilganda (global)
-  emitDocumentDeleted(documentId: string) {
-    this.emitToAll('documentDeleted', { documentId });
+  // Dokument o'chirilganda
+  emitDocumentDeleted(companyId: string, documentId: string) {
+    this.emitToCompany(companyId, 'documentDeleted', { documentId });
     this.logger.log(`Document deleted: ${documentId}`);
   }
 
   // ==================== EMAIL EVENTS ====================
 
-  // Yangi email kelganda
-  emitNewEmailReceived(data: {
+  emitNewEmailReceived(companyId: string, data: {
     accountId: string;
     accountName: string;
     messageId: string;
@@ -122,54 +147,44 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     subject: string;
     date: Date;
   }) {
-    this.emitToAll('newEmailReceived', data);
+    this.emitToCompany(companyId, 'newEmailReceived', data);
     this.logger.log(`New email received: ${data.subject} from ${data.from}`);
   }
 
-  // Bir nechta yangi email kelganda (sync natijasi)
-  emitNewEmailsReceived(data: {
+  emitNewEmailsReceived(companyId: string, data: {
     accountId: string;
     accountName: string;
     count: number;
   }) {
-    this.emitToAll('newEmailsReceived', data);
-    this.logger.log(
-      `${data.count} new emails received for account ${data.accountName}`,
-    );
+    this.emitToCompany(companyId, 'newEmailsReceived', data);
+    this.logger.log(`${data.count} new emails received for account ${data.accountName}`);
   }
 
-  // Email jo'natilganda
-  emitEmailSent(data: {
+  emitEmailSent(companyId: string, data: {
     messageId: string;
     to: string[];
     subject: string;
   }) {
-    this.emitToAll('emailSent', data);
+    this.emitToCompany(companyId, 'emailSent', data);
     this.logger.log(`Email sent: ${data.subject}`);
   }
 
-  // Email CRM obyektiga bog'langanda
-  emitEmailLinked(data: {
+  emitEmailLinked(companyId: string, data: {
     messageId: string;
     entityType: string;
     entityId: string;
   }) {
-    this.emitToAll('emailLinked', data);
-    this.logger.log(
-      `Email ${data.messageId} linked to ${data.entityType}:${data.entityId}`,
-    );
+    this.emitToCompany(companyId, 'emailLinked', data);
+    this.logger.log(`Email ${data.messageId} linked to ${data.entityType}:${data.entityId}`);
   }
 
-  // Email sync xatolik
-  emitEmailSyncError(data: {
+  emitEmailSyncError(companyId: string, data: {
     accountId: string;
     accountName: string;
     error: string;
   }) {
-    this.emitToAll('emailSyncError', data);
-    this.logger.warn(
-      `Email sync error for ${data.accountName}: ${data.error}`,
-    );
+    this.emitToCompany(companyId, 'emailSyncError', data);
+    this.logger.warn(`Email sync error for ${data.accountName}: ${data.error}`);
   }
 
   // Email akkauntga subscribe bo'lish
@@ -179,9 +194,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
   ) {
     client.join(`email-account-${accountId}`);
-    this.logger.log(
-      `Client ${client.id} joined email-account-${accountId}`,
-    );
+    this.logger.log(`Client ${client.id} joined email-account-${accountId}`);
     return { event: 'joinedEmailAccount', data: accountId };
   }
 
@@ -192,17 +205,14 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
   ) {
     client.leave(`email-account-${accountId}`);
-    this.logger.log(
-      `Client ${client.id} left email-account-${accountId}`,
-    );
+    this.logger.log(`Client ${client.id} left email-account-${accountId}`);
     return { event: 'leftEmailAccount', data: accountId };
   }
 
   // ==================== NOTIFICATION EVENTS ====================
 
-  // Yangi notification yaratilganda
-  emitNewNotification(data: any) {
-    this.emitToAll('newNotification', data);
+  emitNewNotification(companyId: string, data: any) {
+    this.emitToCompany(companyId, 'newNotification', data);
     this.logger.log(`New notification: ${data?.title}`);
   }
 }

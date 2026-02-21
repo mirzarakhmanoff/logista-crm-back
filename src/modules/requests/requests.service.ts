@@ -60,7 +60,7 @@ export class RequestsService {
     return `${prefix}-${timestamp}-${random}`;
   }
 
-  async create(createDto: CreateRequestDto, createdById: string): Promise<Request> {
+  async create(createDto: CreateRequestDto, createdById: string, companyId: string): Promise<Request> {
     let resolvedClientId = createDto.clientId;
     const clientName = createDto.client?.trim();
 
@@ -71,6 +71,7 @@ export class RequestsService {
         clientNumber: this.generateClientNumber(clientType),
         type: clientType,
         createdBy: createdById,
+        companyId: new Types.ObjectId(companyId),
       });
       const savedClient = await newClient.save();
       resolvedClientId = savedClient._id.toString();
@@ -125,6 +126,7 @@ export class RequestsService {
       assignedTo: createDto.assignedTo ?? (managerIsId ? managerValue : undefined),
       manager: managerIsId ? undefined : managerValue,
       position,
+      companyId: new Types.ObjectId(companyId),
     });
 
     const savedRequest = await request.save();
@@ -139,7 +141,7 @@ export class RequestsService {
       userId: createdById,
     });
 
-    this.socketGateway.emitToAll('requestCreated', populatedRequest);
+    this.socketGateway.emitToCompany(companyId, 'requestCreated', populatedRequest);
 
     this.notificationsService.create({
       type: NotificationType.REQUEST_CREATED,
@@ -148,13 +150,15 @@ export class RequestsService {
       entityType: 'REQUEST',
       entityId: savedRequest._id.toString(),
       createdBy: createdById,
+      companyId,
     });
 
     return populatedRequest;
   }
 
-  async findAll(filterDto: FilterRequestDto): Promise<{ data: Request[]; total: number; page: number; limit: number }> {
+  async findAll(filterDto: FilterRequestDto, companyId: string): Promise<{ data: Request[]; total: number; page: number; limit: number }> {
     const query: any = {
+      companyId: new Types.ObjectId(companyId),
       isArchived: { $ne: true },
     };
     const page = filterDto.page || 1;
@@ -261,7 +265,7 @@ export class RequestsService {
       userId,
     });
 
-    this.socketGateway.emitToAll('requestUpdated', request);
+    this.socketGateway.emitToCompany(request.companyId?.toString(), 'requestUpdated', request);
 
     this.notificationsService.create({
       type: NotificationType.REQUEST_UPDATED,
@@ -323,7 +327,7 @@ export class RequestsService {
       userId,
     });
 
-    this.socketGateway.emitToAll('requestStatusChanged', {
+    this.socketGateway.emitToCompany(populatedRequest.companyId?.toString(), 'requestStatusChanged', {
       request: populatedRequest,
       fromStatus: oldStatus,
       toStatus: toKey,
@@ -391,7 +395,7 @@ export class RequestsService {
       });
     }
 
-    this.socketGateway.emitToAll('requestMoved', {
+    this.socketGateway.emitToCompany(populatedRequest.companyId?.toString(), 'requestMoved', {
       request: populatedRequest,
       fromStatus: oldStatus,
       toStatus: moveDto.toStatusKey,
@@ -411,18 +415,19 @@ export class RequestsService {
     return populatedRequest;
   }
 
-  async getKanban(type: RequestType): Promise<any> {
+  async getKanban(type: RequestType, companyId: string): Promise<any> {
     const statuses = this.getStatusDefinitions(type);
+    const companyObjectId = new Types.ObjectId(companyId);
 
     const [requests, completedRequests] = await Promise.all([
       this.requestModel
-        .find({ type, isArchived: { $ne: true } })
+        .find({ type, companyId: companyObjectId, isArchived: { $ne: true } })
         .populate('clientId', 'name company phone email')
         .populate('assignedTo', 'fullName email')
         .sort({ position: 1 })
         .exec(),
       this.requestModel
-        .find({ type, statusKey: RequestStatusKey.COMPLETED, isArchived: true })
+        .find({ type, companyId: companyObjectId, statusKey: RequestStatusKey.COMPLETED, isArchived: true })
         .populate('clientId', 'name company phone email')
         .populate('assignedTo', 'fullName email')
         .sort({ archivedAt: -1 })
@@ -500,7 +505,7 @@ export class RequestsService {
       metadata: { content: dto.content },
     });
 
-    this.socketGateway.emitToAll('requestCommentAdded', {
+    this.socketGateway.emitToCompany(request.companyId?.toString(), 'requestCommentAdded', {
       requestId,
       comment,
     });
@@ -561,7 +566,7 @@ export class RequestsService {
       });
     }
 
-    this.socketGateway.emitToAll('requestFilesAdded', {
+    this.socketGateway.emitToCompany(request.companyId?.toString(), 'requestFilesAdded', {
       requestId,
       files: filesToAdd,
     });
@@ -642,7 +647,7 @@ export class RequestsService {
       userId,
     });
 
-    this.socketGateway.emitToAll('requestFileDeleted', {
+    this.socketGateway.emitToCompany(request.companyId?.toString(), 'requestFileDeleted', {
       requestId,
       fileId,
       filename: file.originalName,
@@ -652,10 +657,12 @@ export class RequestsService {
   }
 
   async remove(id: string): Promise<void> {
-    const result = await this.requestModel.findByIdAndDelete(id).exec();
-    if (!result) {
+    const request = await this.requestModel.findById(id).exec();
+    if (!request) {
       throw new NotFoundException(`Request with ID ${id} not found`);
     }
-    this.socketGateway.emitToAll('requestDeleted', { requestId: id });
+    const companyId = request.companyId?.toString();
+    await this.requestModel.findByIdAndDelete(id).exec();
+    this.socketGateway.emitToCompany(companyId, 'requestDeleted', { requestId: id });
   }
 }

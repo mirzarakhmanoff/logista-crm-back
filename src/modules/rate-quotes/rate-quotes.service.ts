@@ -17,7 +17,7 @@ export class RateQuotesService {
     private activityLogsService: ActivityLogsService,
   ) {}
 
-  async create(createDto: CreateRateQuoteDto, createdById: string): Promise<RateQuote> {
+  async create(createDto: CreateRateQuoteDto, createdById: string, companyId: string): Promise<RateQuote> {
     const request = await this.requestModel.findById(createDto.requestId).exec();
     if (!request) {
       throw new NotFoundException(`Request with ID ${createDto.requestId} not found`);
@@ -26,6 +26,7 @@ export class RateQuotesService {
     const quote = new this.rateQuoteModel({
       ...createDto,
       createdBy: createdById,
+      companyId: new Types.ObjectId(companyId),
     });
 
     const savedQuote = await quote.save();
@@ -38,7 +39,7 @@ export class RateQuotesService {
       userId: createdById,
     });
 
-    this.socketGateway.emitToAll('rateQuoteCreated', savedQuote);
+    this.socketGateway.emitToCompany(companyId, 'rateQuoteCreated', savedQuote);
 
     return savedQuote;
   }
@@ -82,16 +83,18 @@ export class RateQuotesService {
       userId,
     });
 
-    this.socketGateway.emitToAll('rateQuoteUpdated', quote);
+    this.socketGateway.emitToCompany(quote.companyId?.toString(), 'rateQuoteUpdated', quote);
 
     return quote;
   }
 
   async remove(id: string): Promise<void> {
-    const result = await this.rateQuoteModel.findByIdAndDelete(id).exec();
-    if (!result) {
+    const quote = await this.rateQuoteModel.findById(id).exec();
+    if (!quote) {
       throw new NotFoundException(`Rate quote with ID ${id} not found`);
     }
-    this.socketGateway.emitToAll('rateQuoteDeleted', { quoteId: id });
+    const companyId = quote.companyId?.toString();
+    await this.rateQuoteModel.findByIdAndDelete(id).exec();
+    this.socketGateway.emitToCompany(companyId, 'rateQuoteDeleted', { quoteId: id });
   }
 }

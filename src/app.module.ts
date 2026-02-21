@@ -25,6 +25,7 @@ import { OperationalPaymentsModule } from './modules/operational-payments/operat
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { PermissionsModule } from './modules/permissions/permissions.module';
 import { SocketModule } from './socket/socket.module';
+import { CompaniesModule } from './modules/companies/companies.module';
 import { getDatabaseConfig } from './config/database.config';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -61,6 +62,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     OperationalPaymentsModule,
     NotificationsModule,
     PermissionsModule,
+    CompaniesModule,
   ],
   controllers: [AppController],
   providers: [

@@ -34,7 +34,7 @@ export interface DocumentFile {
 
 @Schema({ timestamps: true })
 export class Document extends MongooseDocument {
-  @Prop({ required: true, unique: true })
+  @Prop({ required: true })
   documentNumber: string;
 
   @Prop({ required: true })
@@ -93,6 +93,9 @@ export class Document extends MongooseDocument {
 
   @Prop({ type: Types.ObjectId, ref: 'User' })
   archivedBy?: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'Company', required: true, index: true })
+  companyId: Types.ObjectId;
 }
 
 export const DocumentSchema = SchemaFactory.createForClass(Document);
@@ -121,3 +124,4 @@ DocumentSchema.pre('validate', async function () {
 
 DocumentSchema.index({ isArchived: 1, archivedAt: -1 });
 DocumentSchema.index({ status: 1, createdAt: -1 });
+DocumentSchema.index({ documentNumber: 1, companyId: 1 }, { unique: true });

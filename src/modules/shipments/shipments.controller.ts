@@ -31,7 +31,8 @@ export class ShipmentsController {
   ) {
     return this.shipmentsService.create(
       { ...createDto, requestId },
-      user.userId,
+      user.userId || user.sub,
+      user.companyId,
     );
   }
 

@@ -50,7 +50,7 @@ export class UsersController {
     @Body() inviteUserDto: InviteUserDto,
     @CurrentUser() user: any,
   ) {
-    return this.usersService.inviteUser(inviteUserDto, user.userId || user.sub);
+    return this.usersService.inviteUser(inviteUserDto, user.userId || user.sub, user.companyId);
   }
 
   @Post(':id/resend-invitation')
@@ -67,30 +67,30 @@ export class UsersController {
   @Get('basic')
   @ApiOperation({ summary: 'Get all users basic info (for chat, selection etc.)' })
   @ApiResponse({ status: 200, description: 'List of users with basic info' })
-  async findAllBasic() {
-    return this.usersService.findAllBasic();
+  async findAllBasic(@CurrentUser() user: any) {
+    return this.usersService.findAllBasic(user.companyId);
   }
 
   @Get()
   @Permissions('users.read')
   @ApiOperation({ summary: 'Get all users (Admin/Director only)' })
   @ApiResponse({ status: 200, description: 'List of all users' })
-  async findAll() {
-    return this.usersService.findAll();
+  async findAll(@CurrentUser() user: any) {
+    return this.usersService.findAll(user.companyId);
   }
 
   @Get('stats/invitations')
   @Permissions('users.read')
   @ApiOperation({ summary: 'Get invitation statistics' })
-  async getInvitationStats() {
-    return this.usersService.getInvitationStats();
+  async getInvitationStats(@CurrentUser() user: any) {
+    return this.usersService.getInvitationStats(user.companyId);
   }
 
   @Get('role/:role')
   @Permissions('users.read')
   @ApiOperation({ summary: 'Get users by role' })
-  async findByRole(@Param('role') role: UserRole) {
-    return this.usersService.findByRole(role);
+  async findByRole(@Param('role') role: UserRole, @CurrentUser() user: any) {
+    return this.usersService.findByRole(role, user.companyId);
   }
 
   @Get(':id')

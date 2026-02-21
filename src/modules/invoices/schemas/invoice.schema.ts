@@ -51,6 +51,9 @@ export class Invoice extends Document {
 
   @Prop({ type: Types.ObjectId, ref: 'User' })
   archivedBy?: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'Company', required: true, index: true })
+  companyId: Types.ObjectId;
 }
 
 export const InvoiceSchema = SchemaFactory.createForClass(Invoice);

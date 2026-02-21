@@ -57,12 +57,12 @@ export class OperationalPaymentsController {
     @UploadedFiles() files: Array<Express.Multer.File>,
     @CurrentUser() user: any,
   ) {
-    return this.operationalPaymentsService.create(createDto, files || [], user.userId);
+    return this.operationalPaymentsService.create(createDto, files || [], user.userId || user.sub, user.companyId);
   }
 
   @Get()
-  async findAll(@Query() filterDto: FilterOperationalPaymentDto) {
-    return this.operationalPaymentsService.findAll(filterDto);
+  async findAll(@Query() filterDto: FilterOperationalPaymentDto, @CurrentUser() user: any) {
+    return this.operationalPaymentsService.findAll(filterDto, user.companyId);
   }
 
   @Get('statistics')

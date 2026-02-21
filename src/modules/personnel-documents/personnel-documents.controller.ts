@@ -126,14 +126,14 @@ export class PersonnelDocumentsController {
     @Body() dto: CreatePersonnelDocumentDto,
     @CurrentUser() user: any,
   ) {
-    return this.service.createDocument(dto, user.userId);
+    return this.service.createDocument(dto, user.userId || user.sub, user.companyId);
   }
 
   @Get()
   @ApiOperation({ summary: 'Get all personnel documents with filters' })
   @ApiResponse({ status: 200, description: 'List of documents' })
-  async findAllDocuments(@Query() filterDto: FilterPersonnelDocumentDto) {
-    return this.service.findAllDocuments(filterDto);
+  async findAllDocuments(@Query() filterDto: FilterPersonnelDocumentDto, @CurrentUser() user: any) {
+    return this.service.findAllDocuments(filterDto, user.companyId);
   }
 
   @Get(':id')

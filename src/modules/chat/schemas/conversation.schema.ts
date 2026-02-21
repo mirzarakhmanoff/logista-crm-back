@@ -27,6 +27,9 @@ export class Conversation extends Document {
 
   @Prop({ type: Boolean, default: false })
   isDefault: boolean;
+
+  @Prop({ type: Types.ObjectId, ref: 'Company', required: true, index: true })
+  companyId: Types.ObjectId;
 }
 
 export const ConversationSchema =
@@ -35,6 +38,6 @@ export const ConversationSchema =
 ConversationSchema.index({ participants: 1 });
 ConversationSchema.index({ updatedAt: -1 });
 ConversationSchema.index(
-  { isDefault: 1 },
+  { companyId: 1, isDefault: 1 },
   { unique: true, partialFilterExpression: { isDefault: true } },
 );

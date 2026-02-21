@@ -40,17 +40,17 @@ export class RequestsController {
     @Body() createDto: CreateRequestDto,
     @CurrentUser() user: any,
   ) {
-    return this.requestsService.create(createDto, user.userId);
+    return this.requestsService.create(createDto, user.userId || user.sub, user.companyId);
   }
 
   @Get()
-  async findAll(@Query() filterDto: FilterRequestDto) {
-    return this.requestsService.findAll(filterDto);
+  async findAll(@Query() filterDto: FilterRequestDto, @CurrentUser() user: any) {
+    return this.requestsService.findAll(filterDto, user.companyId);
   }
 
   @Get('kanban')
-  async getKanban(@Query('type') type: RequestType) {
-    return this.requestsService.getKanban(type);
+  async getKanban(@Query('type') type: RequestType, @CurrentUser() user: any) {
+    return this.requestsService.getKanban(type, user.companyId);
   }
 
   @Get(':id')

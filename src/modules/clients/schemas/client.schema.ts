@@ -14,7 +14,7 @@ export class Client extends Document {
   @Prop({ type: String, enum: ClientType, default: ClientType.CLIENT })
   type: ClientType;
 
-  @Prop({ unique: true })
+  @Prop()
   clientNumber?: string;
 
   @Prop()
@@ -46,6 +46,9 @@ export class Client extends Document {
 
   @Prop({ type: Types.ObjectId, ref: 'User' })
   archivedBy?: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'Company', required: true, index: true })
+  companyId: Types.ObjectId;
 }
 
 export const ClientSchema = SchemaFactory.createForClass(Client);
@@ -54,3 +57,4 @@ ClientSchema.index({ name: 'text', company: 'text', phone: 'text', email: 'text'
 ClientSchema.index({ createdAt: -1 });
 ClientSchema.index({ type: 1, createdAt: -1 });
 ClientSchema.index({ isArchived: 1, archivedAt: -1 });
+ClientSchema.index({ clientNumber: 1, companyId: 1 }, { unique: true, sparse: true });

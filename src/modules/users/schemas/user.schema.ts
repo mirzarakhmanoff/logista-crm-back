@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 
 export enum UserRole {
+  SUPER_ADMIN = 'super_admin',
   ADMIN = 'admin',
   DIRECTOR = 'director',
   MANAGER = 'manager',
@@ -55,6 +56,9 @@ export class User extends Document {
   @Prop({ default: false })
   mustChangePassword: boolean;
 
+  @Prop({ type: Types.ObjectId, ref: 'Company' })
+  companyId?: Types.ObjectId;
+
   @Prop({ type: Types.ObjectId, ref: 'User' })
   invitedBy?: Types.ObjectId;
 
@@ -73,3 +77,4 @@ export const UserSchema = SchemaFactory.createForClass(User);
 UserSchema.index({ email: 1 }, { unique: true });
 UserSchema.index({ invitationCode: 1 });
 UserSchema.index({ role: 1 });
+UserSchema.index({ companyId: 1 });

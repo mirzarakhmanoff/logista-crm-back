@@ -51,7 +51,7 @@ export class DocumentsController {
     @Body() createDocumentDto: CreateDocumentDto,
     @CurrentUser() user: any,
   ) {
-    return this.documentsService.create(createDocumentDto, user.userId);
+    return this.documentsService.create(createDocumentDto, user.userId || user.sub, user.companyId);
   }
 
   @Get()
@@ -60,8 +60,8 @@ export class DocumentsController {
     status: 200,
     description: 'List of documents',
   })
-  async findAll(@Query() filterDto: FilterDocumentDto) {
-    return this.documentsService.findAll(filterDto);
+  async findAll(@Query() filterDto: FilterDocumentDto, @CurrentUser() user: any) {
+    return this.documentsService.findAll(filterDto, user.companyId);
   }
 
   @Get('stats')

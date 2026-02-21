@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Request, RequestType, RequestSource, RequestStatusKey } from '../requests/schemas/request.schema';
 import { IssuedCode, CodeStatus } from '../issued-codes/schemas/issued-code.schema';
 import { Shipment, ShipmentStatus } from '../shipments/schemas/shipment.schema';
@@ -21,7 +21,8 @@ export class DashboardService {
     @InjectModel(Document.name) private documentModel: Model<Document>,
   ) {}
 
-  async getSummary(): Promise<any> {
+  async getSummary(companyId: string): Promise<any> {
+    const cid = new Types.ObjectId(companyId);
     const [
       newClientsCount,
       ourClientsCount,
@@ -32,14 +33,15 @@ export class DashboardService {
       shipmentsInTransitCount,
       unpaidInvoicesCount,
     ] = await Promise.all([
-      this.requestModel.countDocuments({ type: RequestType.NEW_CLIENT }),
-      this.requestModel.countDocuments({ type: RequestType.OUR_CLIENT }),
-      this.requestModel.countDocuments({ type: RequestType.NEW_AGENT }),
-      this.requestModel.countDocuments({ type: RequestType.OUR_AGENT }),
-      this.requestModel.countDocuments({ statusKey: 'in_work' }),
-      this.issuedCodeModel.countDocuments({ status: CodeStatus.ACTIVE }),
-      this.shipmentModel.countDocuments({ status: ShipmentStatus.IN_TRANSIT }),
+      this.requestModel.countDocuments({ companyId: cid, type: RequestType.NEW_CLIENT }),
+      this.requestModel.countDocuments({ companyId: cid, type: RequestType.OUR_CLIENT }),
+      this.requestModel.countDocuments({ companyId: cid, type: RequestType.NEW_AGENT }),
+      this.requestModel.countDocuments({ companyId: cid, type: RequestType.OUR_AGENT }),
+      this.requestModel.countDocuments({ companyId: cid, statusKey: 'in_work' }),
+      this.issuedCodeModel.countDocuments({ companyId: cid, status: CodeStatus.ACTIVE }),
+      this.shipmentModel.countDocuments({ companyId: cid, status: ShipmentStatus.IN_TRANSIT }),
       this.invoiceModel.countDocuments({
+        companyId: cid,
         status: { $in: [InvoiceStatus.UNPAID, InvoiceStatus.PARTIAL] },
       }),
     ]);
@@ -56,24 +58,25 @@ export class DashboardService {
     };
   }
 
-  async getRequestStats(): Promise<any> {
+  async getRequestStats(companyId: string): Promise<any> {
+    const cid = new Types.ObjectId(companyId);
     const newClientStats = await this.requestModel.aggregate([
-      { $match: { type: RequestType.NEW_CLIENT } },
+      { $match: { companyId: cid, type: RequestType.NEW_CLIENT } },
       { $group: { _id: '$statusKey', count: { $sum: 1 } } },
     ]);
 
     const ourClientStats = await this.requestModel.aggregate([
-      { $match: { type: RequestType.OUR_CLIENT } },
+      { $match: { companyId: cid, type: RequestType.OUR_CLIENT } },
       { $group: { _id: '$statusKey', count: { $sum: 1 } } },
     ]);
 
     const newAgentStats = await this.requestModel.aggregate([
-      { $match: { type: RequestType.NEW_AGENT } },
+      { $match: { companyId: cid, type: RequestType.NEW_AGENT } },
       { $group: { _id: '$statusKey', count: { $sum: 1 } } },
     ]);
 
     const ourAgentStats = await this.requestModel.aggregate([
-      { $match: { type: RequestType.OUR_AGENT } },
+      { $match: { companyId: cid, type: RequestType.OUR_AGENT } },
       { $group: { _id: '$statusKey', count: { $sum: 1 } } },
     ]);
 
@@ -97,14 +100,15 @@ export class DashboardService {
     };
   }
 
-  async getFullStatistics(): Promise<any> {
+  async getFullStatistics(companyId: string): Promise<any> {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfYear = new Date(now.getFullYear(), 0, 1);
     const last12Months = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+    const cid = new Types.ObjectId(companyId);
 
     const [
-    
+
       totalRequests,
       totalClients,
       totalAgents,
@@ -154,28 +158,31 @@ export class DashboardService {
       codesThisMonth,
     ] = await Promise.all([
       // Overview counts
-      this.requestModel.countDocuments(),
-      this.clientModel.countDocuments({ type: ClientType.CLIENT }),
-      this.clientModel.countDocuments({ type: ClientType.AGENT }),
-      this.userModel.countDocuments(),
-      this.documentModel.countDocuments(),
-      this.shipmentModel.countDocuments(),
-      this.invoiceModel.countDocuments(),
-      this.issuedCodeModel.countDocuments(),
+      this.requestModel.countDocuments({ companyId: cid }),
+      this.clientModel.countDocuments({ companyId: cid, type: ClientType.CLIENT }),
+      this.clientModel.countDocuments({ companyId: cid, type: ClientType.AGENT }),
+      this.userModel.countDocuments({ companyId: cid }),
+      this.documentModel.countDocuments({ companyId: cid }),
+      this.shipmentModel.countDocuments({ companyId: cid }),
+      this.invoiceModel.countDocuments({ companyId: cid }),
+      this.issuedCodeModel.countDocuments({ companyId: cid }),
 
       // Request statistics
       this.requestModel.aggregate([
+        { $match: { companyId: cid } },
         { $group: { _id: '$type', count: { $sum: 1 } } },
       ]),
       this.requestModel.aggregate([
+        { $match: { companyId: cid } },
         { $group: { _id: '$statusKey', count: { $sum: 1 } } },
       ]),
       this.requestModel.aggregate([
+        { $match: { companyId: cid } },
         { $group: { _id: '$source', count: { $sum: 1 } } },
       ]),
-      this.requestModel.countDocuments({ createdAt: { $gte: startOfMonth } }),
+      this.requestModel.countDocuments({ companyId: cid, createdAt: { $gte: startOfMonth } }),
       this.requestModel.aggregate([
-        { $match: { createdAt: { $gte: last12Months } } },
+        { $match: { companyId: cid, createdAt: { $gte: last12Months } } },
         {
           $group: {
             _id: {
@@ -188,14 +195,15 @@ export class DashboardService {
         { $sort: { '_id.year': 1, '_id.month': 1 } },
       ]),
       this.requestModel.countDocuments({
+        companyId: cid,
         statusKey: RequestStatusKey.COMPLETED,
         updatedAt: { $gte: startOfMonth },
       }),
 
       // Client statistics
-      this.clientModel.countDocuments({ createdAt: { $gte: startOfMonth } }),
+      this.clientModel.countDocuments({ companyId: cid, createdAt: { $gte: startOfMonth } }),
       this.clientModel.aggregate([
-        { $match: { createdAt: { $gte: last12Months } } },
+        { $match: { companyId: cid, createdAt: { $gte: last12Months } } },
         {
           $group: {
             _id: {
@@ -211,39 +219,47 @@ export class DashboardService {
 
       // Document statistics
       this.documentModel.aggregate([
+        { $match: { companyId: cid } },
         { $group: { _id: '$status', count: { $sum: 1 } } },
       ]),
       this.documentModel.aggregate([
+        { $match: { companyId: cid } },
         { $group: { _id: '$type', count: { $sum: 1 } } },
       ]),
       this.documentModel.aggregate([
+        { $match: { companyId: cid } },
         { $group: { _id: '$priority', count: { $sum: 1 } } },
       ]),
-      this.documentModel.countDocuments({ createdAt: { $gte: startOfMonth } }),
+      this.documentModel.countDocuments({ companyId: cid, createdAt: { $gte: startOfMonth } }),
 
       // Shipment statistics
       this.shipmentModel.aggregate([
+        { $match: { companyId: cid } },
         { $group: { _id: '$status', count: { $sum: 1 } } },
       ]),
-      this.shipmentModel.countDocuments({ createdAt: { $gte: startOfMonth } }),
+      this.shipmentModel.countDocuments({ companyId: cid, createdAt: { $gte: startOfMonth } }),
       this.shipmentModel.countDocuments({
+        companyId: cid,
         status: ShipmentStatus.DELIVERED,
         actualArrivalDate: { $gte: startOfMonth },
       }),
 
       // Invoice statistics
       this.invoiceModel.aggregate([
+        { $match: { companyId: cid } },
         { $group: { _id: '$status', count: { $sum: 1 } } },
       ]),
       this.invoiceModel.aggregate([
+        { $match: { companyId: cid } },
         { $group: { _id: null, total: { $sum: '$amount' } } },
       ]),
       this.invoiceModel.aggregate([
+        { $match: { companyId: cid } },
         { $group: { _id: null, total: { $sum: '$paidAmount' } } },
       ]),
       this.invoiceModel.aggregate([
         {
-          $match: { status: { $in: [InvoiceStatus.UNPAID, InvoiceStatus.PARTIAL] } },
+          $match: { companyId: cid, status: { $in: [InvoiceStatus.UNPAID, InvoiceStatus.PARTIAL] } },
         },
         {
           $group: {
@@ -253,11 +269,11 @@ export class DashboardService {
         },
       ]),
       this.invoiceModel.aggregate([
-        { $match: { createdAt: { $gte: startOfMonth } } },
+        { $match: { companyId: cid, createdAt: { $gte: startOfMonth } } },
         { $group: { _id: null, total: { $sum: '$amount' } } },
       ]),
       this.invoiceModel.aggregate([
-        { $match: { createdAt: { $gte: last12Months } } },
+        { $match: { companyId: cid, createdAt: { $gte: last12Months } } },
         {
           $group: {
             _id: {
@@ -274,15 +290,17 @@ export class DashboardService {
 
       // User statistics
       this.userModel.aggregate([
+        { $match: { companyId: cid } },
         { $group: { _id: '$role', count: { $sum: 1 } } },
       ]),
-      this.userModel.countDocuments({ isActive: true }),
+      this.userModel.countDocuments({ companyId: cid, isActive: true }),
 
       // Issued codes statistics
       this.issuedCodeModel.aggregate([
+        { $match: { companyId: cid } },
         { $group: { _id: '$status', count: { $sum: 1 } } },
       ]),
-      this.issuedCodeModel.countDocuments({ createdAt: { $gte: startOfMonth } }),
+      this.issuedCodeModel.countDocuments({ companyId: cid, createdAt: { $gte: startOfMonth } }),
     ]);
 
     // Helper function to convert aggregation results to object
@@ -408,7 +426,8 @@ export class DashboardService {
     };
   }
 
-  async getStatisticsByDateRange(startDate: Date, endDate: Date): Promise<any> {
+  async getStatisticsByDateRange(startDate: Date, endDate: Date, companyId: string): Promise<any> {
+    const cid = new Types.ObjectId(companyId);
     const [
       requestsInRange,
       requestsByTypeInRange,
@@ -426,48 +445,55 @@ export class DashboardService {
       paidRevenueInRange,
     ] = await Promise.all([
       this.requestModel.countDocuments({
+        companyId: cid,
         createdAt: { $gte: startDate, $lte: endDate },
       }),
       this.requestModel.aggregate([
-        { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+        { $match: { companyId: cid, createdAt: { $gte: startDate, $lte: endDate } } },
         { $group: { _id: '$type', count: { $sum: 1 } } },
       ]),
       this.requestModel.aggregate([
-        { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+        { $match: { companyId: cid, createdAt: { $gte: startDate, $lte: endDate } } },
         { $group: { _id: '$statusKey', count: { $sum: 1 } } },
       ]),
       this.requestModel.aggregate([
-        { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+        { $match: { companyId: cid, createdAt: { $gte: startDate, $lte: endDate } } },
         { $group: { _id: '$source', count: { $sum: 1 } } },
       ]),
       this.requestModel.countDocuments({
+        companyId: cid,
         statusKey: RequestStatusKey.COMPLETED,
         updatedAt: { $gte: startDate, $lte: endDate },
       }),
 
       this.clientModel.countDocuments({
+        companyId: cid,
         createdAt: { $gte: startDate, $lte: endDate },
       }),
       this.documentModel.countDocuments({
+        companyId: cid,
         createdAt: { $gte: startDate, $lte: endDate },
       }),
       this.shipmentModel.countDocuments({
+        companyId: cid,
         createdAt: { $gte: startDate, $lte: endDate },
       }),
       this.shipmentModel.countDocuments({
+        companyId: cid,
         status: ShipmentStatus.DELIVERED,
         actualArrivalDate: { $gte: startDate, $lte: endDate },
       }),
 
       this.invoiceModel.countDocuments({
+        companyId: cid,
         createdAt: { $gte: startDate, $lte: endDate },
       }),
       this.invoiceModel.aggregate([
-        { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+        { $match: { companyId: cid, createdAt: { $gte: startDate, $lte: endDate } } },
         { $group: { _id: null, total: { $sum: '$amount' } } },
       ]),
       this.invoiceModel.aggregate([
-        { $match: { paidAt: { $gte: startDate, $lte: endDate } } },
+        { $match: { companyId: cid, paidAt: { $gte: startDate, $lte: endDate } } },
         { $group: { _id: null, total: { $sum: '$paidAmount' } } },
       ]),
     ]);
@@ -509,9 +535,9 @@ export class DashboardService {
     };
   }
 
-  async getManagerStatistics(managerId: string): Promise<any> {
-    const { Types } = require('mongoose');
+  async getManagerStatistics(managerId: string, companyId: string): Promise<any> {
     const managerObjectId = new Types.ObjectId(managerId);
+    const cid = new Types.ObjectId(companyId);
 
     const [
       totalAssigned,
@@ -520,20 +546,22 @@ export class DashboardService {
       completedRequests,
       activeRequests,
     ] = await Promise.all([
-      this.requestModel.countDocuments({ assignedTo: managerObjectId }),
+      this.requestModel.countDocuments({ companyId: cid, assignedTo: managerObjectId }),
       this.requestModel.aggregate([
-        { $match: { assignedTo: managerObjectId } },
+        { $match: { companyId: cid, assignedTo: managerObjectId } },
         { $group: { _id: '$statusKey', count: { $sum: 1 } } },
       ]),
       this.requestModel.aggregate([
-        { $match: { assignedTo: managerObjectId } },
+        { $match: { companyId: cid, assignedTo: managerObjectId } },
         { $group: { _id: '$type', count: { $sum: 1 } } },
       ]),
       this.requestModel.countDocuments({
+        companyId: cid,
         assignedTo: managerObjectId,
         statusKey: RequestStatusKey.COMPLETED,
       }),
       this.requestModel.countDocuments({
+        companyId: cid,
         assignedTo: managerObjectId,
         statusKey: { $nin: [RequestStatusKey.COMPLETED, RequestStatusKey.REJECTED] },
       }),

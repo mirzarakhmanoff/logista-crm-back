@@ -17,5 +17,6 @@ export class AuthResponseDto {
     fullName: string;
     role: UserRole;
     mustChangePassword?: boolean;
+    companyId?: string;
   };
 }

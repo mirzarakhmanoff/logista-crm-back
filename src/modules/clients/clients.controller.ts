@@ -38,17 +38,17 @@ export class ClientsController {
     @Body() createClientDto: CreateClientDto,
     @CurrentUser() user: any,
   ) {
-    return this.clientsService.create(createClientDto, user.userId);
+    return this.clientsService.create(createClientDto, user.userId || user.sub, user.companyId);
   }
 
   @Get()
-  async findAllClients(@Query() filterDto: FilterClientDto) {
-    return this.clientsService.findAll({ ...filterDto, type: ClientType.CLIENT });
+  async findAllClients(@Query() filterDto: FilterClientDto, @CurrentUser() user: any) {
+    return this.clientsService.findAll({ ...filterDto, type: ClientType.CLIENT }, user.companyId);
   }
 
   @Get('agents')
-  async findAllAgents(@Query() filterDto: FilterClientDto) {
-    return this.clientsService.findAll({ ...filterDto, type: ClientType.AGENT });
+  async findAllAgents(@Query() filterDto: FilterClientDto, @CurrentUser() user: any) {
+    return this.clientsService.findAll({ ...filterDto, type: ClientType.AGENT }, user.companyId);
   }
 
   @Get(':id')

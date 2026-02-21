@@ -36,8 +36,11 @@ export class UsersService {
   }
 
   private canCreateRole(creatorRole: UserRole, targetRole: UserRole): boolean {
-    if (creatorRole === UserRole.ADMIN) {
+    if (creatorRole === UserRole.SUPER_ADMIN) {
       return true;
+    }
+    if (creatorRole === UserRole.ADMIN) {
+      return targetRole !== UserRole.SUPER_ADMIN;
     }
     if (creatorRole === UserRole.DIRECTOR) {
       return [UserRole.MANAGER, UserRole.ACCOUNTANT, UserRole.ADMINISTRATOR].includes(targetRole);
@@ -57,19 +60,25 @@ export class UsersService {
     return user;
   }
 
-  async findAll(): Promise<User[]> {
-    return this.userModel.find().select('-password').exec();
+  async findAll(companyId?: string): Promise<User[]> {
+    const filter: any = {};
+    if (companyId) filter.companyId = new Types.ObjectId(companyId);
+    return this.userModel.find(filter).select('-password').exec();
   }
 
-  async findAllBasic(): Promise<Pick<User, '_id' | 'fullName' | 'role' | 'avatar'>[]> {
+  async findAllBasic(companyId?: string): Promise<Pick<User, '_id' | 'fullName' | 'role' | 'avatar'>[]> {
+    const filter: any = { isActive: true };
+    if (companyId) filter.companyId = new Types.ObjectId(companyId);
     return this.userModel
-      .find({ isActive: true })
+      .find(filter)
       .select('fullName role avatar')
       .exec();
   }
 
-  async findByRole(role: UserRole): Promise<User[]> {
-    return this.userModel.find({ role }).select('-password').exec();
+  async findByRole(role: UserRole, companyId?: string): Promise<User[]> {
+    const filter: any = { role };
+    if (companyId) filter.companyId = new Types.ObjectId(companyId);
+    return this.userModel.find(filter).select('-password').exec();
   }
 
   async create(userData: Partial<User>): Promise<User> {
@@ -98,7 +107,7 @@ export class UsersService {
     return user.save();
   }
 
-  async inviteUser(inviteDto: InviteUserDto, invitedById: string): Promise<User> {
+  async inviteUser(inviteDto: InviteUserDto, invitedById: string, companyId?: string): Promise<User> {
     const inviter = await this.findById(invitedById);
 
     if (!this.canCreateRole(inviter.role, inviteDto.role)) {
@@ -119,6 +128,8 @@ export class UsersService {
     const invitationCodeExpires = new Date();
     invitationCodeExpires.setHours(invitationCodeExpires.getHours() + 24);
 
+    const resolvedCompanyId = companyId || inviter.companyId?.toString();
+
     const user = new this.userModel({
       email: inviteDto.email.toLowerCase(),
       password: hashedPassword,
@@ -132,6 +143,7 @@ export class UsersService {
       mustChangePassword: true,
       invitedBy: new Types.ObjectId(invitedById),
       invitedAt: new Date(),
+      companyId: resolvedCompanyId ? new Types.ObjectId(resolvedCompanyId) : undefined,
     });
 
     const savedUser = await user.save();
@@ -292,12 +304,14 @@ export class UsersService {
       .exec();
   }
 
-  async getInvitationStats(): Promise<any> {
+  async getInvitationStats(companyId?: string): Promise<any> {
+    const filter: any = {};
+    if (companyId) filter.companyId = new Types.ObjectId(companyId);
     const [pending, accepted, expired, total] = await Promise.all([
-      this.userModel.countDocuments({ invitationStatus: InvitationStatus.PENDING }),
-      this.userModel.countDocuments({ invitationStatus: InvitationStatus.ACCEPTED }),
-      this.userModel.countDocuments({ invitationStatus: InvitationStatus.EXPIRED }),
-      this.userModel.countDocuments(),
+      this.userModel.countDocuments({ ...filter, invitationStatus: InvitationStatus.PENDING }),
+      this.userModel.countDocuments({ ...filter, invitationStatus: InvitationStatus.ACCEPTED }),
+      this.userModel.countDocuments({ ...filter, invitationStatus: InvitationStatus.EXPIRED }),
+      this.userModel.countDocuments(filter),
     ]);
 
     return { pending, accepted, expired, total };

@@ -24,8 +24,12 @@ export class RolesGuard implements CanActivate {
 
     const { user } = context.switchToHttp().getRequest();
 
-    // ADMIN and DIRECTOR always have full access
-    if (user.role === UserRole.ADMIN || user.role === UserRole.DIRECTOR) {
+    // SUPER_ADMIN, ADMIN and DIRECTOR always have full access
+    if (
+      user.role === UserRole.SUPER_ADMIN ||
+      user.role === UserRole.ADMIN ||
+      user.role === UserRole.DIRECTOR
+    ) {
       return true;
     }
 

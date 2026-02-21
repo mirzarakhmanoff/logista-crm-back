@@ -21,7 +21,7 @@ export class PaymentFile {
 
 @Schema({ timestamps: true, collection: 'operational_payments' })
 export class OperationalPayment extends Document {
-  @Prop({ required: true, unique: true })
+  @Prop({ required: true })
   paymentNumber: string;
 
   @Prop({ required: true, type: Date })
@@ -94,12 +94,15 @@ export class OperationalPayment extends Document {
 
   @Prop({ type: Types.ObjectId, ref: 'User' })
   archivedBy: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'Company', required: true, index: true })
+  companyId: Types.ObjectId;
 }
 
 export const OperationalPaymentSchema = SchemaFactory.createForClass(OperationalPayment);
 
 // Indexes for optimized queries
-OperationalPaymentSchema.index({ paymentNumber: 1 });
+OperationalPaymentSchema.index({ paymentNumber: 1, companyId: 1 }, { unique: true });
 OperationalPaymentSchema.index({ status: 1, createdAt: -1 });
 OperationalPaymentSchema.index({ isCritical: 1, status: 1 });
 OperationalPaymentSchema.index({ isArchived: 1 });
