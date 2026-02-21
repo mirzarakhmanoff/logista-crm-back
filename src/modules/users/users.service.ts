@@ -128,7 +128,8 @@ export class UsersService {
     const invitationCodeExpires = new Date();
     invitationCodeExpires.setHours(invitationCodeExpires.getHours() + 24);
 
-    const resolvedCompanyId = companyId || inviter.companyId?.toString();
+    // SUPER_ADMIN dto ichida targetCompanyId berib yuborishi mumkin
+    const resolvedCompanyId = inviteDto.targetCompanyId || companyId || inviter.companyId?.toString();
 
     const user = new this.userModel({
       email: inviteDto.email.toLowerCase(),
@@ -280,6 +281,20 @@ export class UsersService {
     user.password = await bcrypt.hash(newPassword, 10);
     user.mustChangePassword = false;
     await user.save();
+  }
+
+  async toggleActive(userId: string, companyId: string): Promise<User> {
+    const user = await this.userModel
+      .findOne({ _id: userId, companyId: new Types.ObjectId(companyId) })
+      .select('-password')
+      .exec();
+
+    if (!user) {
+      throw new NotFoundException('User topilmadi yoki bu kompaniyaga tegishli emas');
+    }
+
+    user.isActive = !user.isActive;
+    return user.save();
   }
 
   async remove(id: string): Promise<void> {

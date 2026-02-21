@@ -18,7 +18,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "migrate:multitenancy": "npx ts-node -r tsconfig-paths/register src/scripts/migrate-to-multitenancy.ts"
+    "migrate:multitenancy": "npx ts-node -r tsconfig-paths/register src/scripts/migrate-to-multitenancy.ts",
+    "create:superadmin": "npx ts-node -r tsconfig-paths/register src/scripts/create-super-admin.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

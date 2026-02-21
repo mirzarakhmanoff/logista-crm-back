@@ -39,4 +39,12 @@ export class InviteUserDto {
   @IsString()
   @MinLength(8)
   password?: string;
+
+  @ApiPropertyOptional({
+    example: '685abc123def456',
+    description: 'Faqat SUPER_ADMIN uchun: userni qaysi kompaniyaga biriktirish kerak',
+  })
+  @IsString()
+  @IsOptional()
+  targetCompanyId?: string;
 }

@@ -56,10 +56,10 @@ async function run() {
 
   // MongoDB ga ulaning
   console.log(`📡 MongoDB ga ulanmoqda: ${MONGODB_URI}`);
-  await mongoose.connect(MONGODB_URI);
+  const conn = await mongoose.connect(MONGODB_URI);
   console.log('✅ MongoDB ga ulandi\n');
 
-  const db = mongoose.connection.db;
+  const db = conn.connection.db;
   if (!db) throw new Error('DB connection failed');
 
   // ─────────────────────────────────────────────
