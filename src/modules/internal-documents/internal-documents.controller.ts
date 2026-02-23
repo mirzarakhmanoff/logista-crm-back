@@ -94,15 +94,18 @@ export class InternalDocumentsController {
     summary: 'Get global stats (total, under review, overdue)',
   })
   @ApiResponse({ status: 200, description: 'Global statistics' })
-  async getGlobalStats() {
-    return this.service.getGlobalStats();
+  async getGlobalStats(@CurrentUser() user: any) {
+    return this.service.getGlobalStats(user.companyId);
   }
 
   @Get('stats/by-status')
   @ApiOperation({ summary: 'Get document counts by status' })
   @ApiResponse({ status: 200, description: 'Status statistics' })
-  async getStatsByStatus(@Query('categoryId') categoryId?: string) {
-    return this.service.getDocumentStatsByStatus(categoryId);
+  async getStatsByStatus(
+    @CurrentUser() user: any,
+    @Query('categoryId') categoryId?: string,
+  ) {
+    return this.service.getDocumentStatsByStatus(user.companyId, categoryId);
   }
 
   @Get('categories/:id/stats')

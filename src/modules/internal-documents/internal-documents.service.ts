@@ -112,25 +112,27 @@ export class InternalDocumentsService {
 
   // ==================== GLOBAL STATS ====================
 
-  async getGlobalStats(): Promise<{
+  async getGlobalStats(companyId: string): Promise<{
     total: number;
     underReview: number;
     overdue: number;
   }> {
+    const filter = { companyId: new Types.ObjectId(companyId), isArchived: false };
     const [total, underReview, overdue] = await Promise.all([
-      this.documentModel.countDocuments({ isArchived: false }),
+      this.documentModel.countDocuments(filter),
       this.documentModel.countDocuments({
+        ...filter,
         status: InternalDocumentStatus.UNDER_REVIEW,
-        isArchived: false,
       }),
-      this.getOverdueCount(),
+      this.getOverdueCount(companyId),
     ]);
 
     return { total, underReview, overdue };
   }
 
-  private async getOverdueCount(): Promise<number> {
+  private async getOverdueCount(companyId: string): Promise<number> {
     return this.documentModel.countDocuments({
+      companyId: new Types.ObjectId(companyId),
       dueDate: { $lt: new Date() },
       status: {
         $nin: [
@@ -397,9 +399,9 @@ export class InternalDocumentsService {
     return { total, signing, expiring };
   }
 
-  async getDocumentStatsByStatus(categoryId?: string) {
-    const match: any = { isArchived: false };
-    if (categoryId) match.category = categoryId;
+  async getDocumentStatsByStatus(companyId: string, categoryId?: string) {
+    const match: any = { companyId: new Types.ObjectId(companyId), isArchived: false };
+    if (categoryId) match.category = new Types.ObjectId(categoryId);
 
     return this.documentModel.aggregate([
       { $match: match },
