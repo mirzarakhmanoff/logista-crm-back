@@ -64,7 +64,7 @@ export class EmailAccount extends Document {
   @Prop({ type: [{ type: Types.ObjectId, ref: 'User' }], default: [] })
   sharedWith: Types.ObjectId[];
 
-  @Prop({ type: Types.ObjectId, ref: 'Company', required: true, index: true })
+  @Prop({ type: 'ObjectId', ref: 'Company', required: true, index: true })
   companyId: Types.ObjectId;
 }
 

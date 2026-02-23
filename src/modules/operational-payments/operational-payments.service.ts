@@ -50,7 +50,7 @@ export class OperationalPaymentsService {
       createdBy: new Types.ObjectId(createdById),
       currency: createDto.currency || 'RUB',
       files: filesData,
-      companyId: companyId,
+      companyId: new Types.ObjectId(companyId),
     });
 
     const saved = await payment.save();
@@ -93,7 +93,7 @@ export class OperationalPaymentsService {
       limit = 25,
     } = filterDto;
 
-    const query: any = { companyId: companyId, isArchived: { $ne: true } };
+    const query: any = { companyId: new Types.ObjectId(companyId), isArchived: { $ne: true } };
 
     if (status) {
       query.status = status;

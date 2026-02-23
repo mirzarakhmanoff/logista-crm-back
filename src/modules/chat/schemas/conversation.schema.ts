@@ -28,7 +28,7 @@ export class Conversation extends Document {
   @Prop({ type: Boolean, default: false })
   isDefault: boolean;
 
-  @Prop({ type: Types.ObjectId, ref: 'Company', required: true, index: true })
+  @Prop({ type: 'ObjectId', ref: 'Company', required: true, index: true })
   companyId: Types.ObjectId;
 }
 

@@ -29,7 +29,7 @@ export class ShipmentsService {
     const shipment = new this.shipmentModel({
       ...createDto,
       createdBy: createdById,
-      companyId: companyId,
+      companyId: new Types.ObjectId(companyId),
     });
 
     const savedShipment = await shipment.save();

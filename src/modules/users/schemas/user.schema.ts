@@ -56,7 +56,7 @@ export class User extends Document {
   @Prop({ default: false })
   mustChangePassword: boolean;
 
-  @Prop({ type: Types.ObjectId, ref: 'Company' })
+  @Prop({ type: 'ObjectId', ref: 'Company' })
   companyId?: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, ref: 'User' })

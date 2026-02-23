@@ -37,7 +37,7 @@ export class DocumentsService {
         const document = new this.documentModel({
           ...createDocumentDto,
           createdBy: createdById,
-          companyId: companyId,
+          companyId: new Types.ObjectId(companyId),
         });
         savedDocument = await document.save();
         break;
@@ -75,7 +75,7 @@ export class DocumentsService {
   }
 
   async findAll(filterDto: FilterDocumentDto, companyId: string): Promise<Document[]> {
-    const query: any = { companyId: companyId };
+    const query: any = { companyId: new Types.ObjectId(companyId) };
 
     if (filterDto.isArchived !== undefined) {
       query.isArchived = filterDto.isArchived;

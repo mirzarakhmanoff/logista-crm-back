@@ -48,7 +48,7 @@ export class ChatMessage extends Document {
   @Prop()
   editedAt?: Date;
 
-  @Prop({ type: Types.ObjectId, ref: 'Company', required: true, index: true })
+  @Prop({ type: 'ObjectId', ref: 'Company', required: true, index: true })
   companyId: Types.ObjectId;
 }
 

@@ -29,7 +29,7 @@ export class DocumentCategory extends Document {
   @Prop({ default: false })
   isArchived: boolean;
 
-  @Prop({ type: Types.ObjectId, ref: 'Company', required: true, index: true })
+  @Prop({ type: 'ObjectId', ref: 'Company', required: true, index: true })
   companyId: Types.ObjectId;
 
   createdAt?: Date;

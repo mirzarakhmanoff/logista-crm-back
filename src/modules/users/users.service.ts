@@ -285,7 +285,7 @@ export class UsersService {
 
   async toggleActive(userId: string, companyId: string): Promise<User> {
     const user = await this.userModel
-      .findOne({ _id: userId, companyId: companyId })
+      .findOne({ _id: userId, companyId: new Types.ObjectId(companyId) })
       .select('-password')
       .exec();
 

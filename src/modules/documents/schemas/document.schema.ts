@@ -94,7 +94,7 @@ export class Document extends MongooseDocument {
   @Prop({ type: Types.ObjectId, ref: 'User' })
   archivedBy?: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'Company', required: true, index: true })
+  @Prop({ type: 'ObjectId', ref: 'Company', required: true, index: true })
   companyId: Types.ObjectId;
 }
 

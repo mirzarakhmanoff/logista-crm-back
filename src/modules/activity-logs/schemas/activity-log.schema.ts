@@ -47,7 +47,7 @@ export class ActivityLog extends Document {
   @Prop({ type: Object })
   metadata?: Record<string, any>;
 
-  @Prop({ type: Types.ObjectId, ref: 'Company', required: true, index: true })
+  @Prop({ type: 'ObjectId', ref: 'Company', required: true, index: true })
   companyId: Types.ObjectId;
 }
 

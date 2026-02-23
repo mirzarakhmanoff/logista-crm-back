@@ -48,7 +48,7 @@ export class ClientsService {
       ...createClientDto,
       clientNumber,
       createdBy: createdById,
-      companyId: companyId,
+      companyId: new Types.ObjectId(companyId),
     });
 
     const savedClient = await client.save();
@@ -79,7 +79,7 @@ export class ClientsService {
 
   async findAll(filterDto: FilterClientDto, companyId: string): Promise<{ data: Client[]; total: number; page: number; limit: number }> {
     const query: any = {
-      companyId: companyId,
+      companyId: new Types.ObjectId(companyId),
       isArchived: { $ne: true },
     };
     const page = filterDto.page || 1;

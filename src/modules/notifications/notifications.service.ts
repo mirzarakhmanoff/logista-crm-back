@@ -69,7 +69,7 @@ export class NotificationsService {
         .exec(),
       this.notificationModel.countDocuments(query),
       this.notificationModel.countDocuments({
-        ...(companyId ? { companyId: companyId } : {}),
+        ...(companyId ? { companyId: new Types.ObjectId(companyId) } : {}),
         createdBy: { $ne: userObjectId },
         readBy: { $ne: userObjectId },
       }),
