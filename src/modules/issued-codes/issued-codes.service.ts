@@ -44,6 +44,7 @@ export class IssuedCodesService {
       action: 'updated',
       message: `Code issued: ${createDto.code}`,
       userId: issuedById,
+      companyId,
     });
 
     this.socketGateway.emitToCompany(companyId, 'issuedCodeCreated', savedCode);
@@ -107,6 +108,7 @@ export class IssuedCodesService {
       action: 'updated',
       message: `Code ${code.code} status changed to ${updateDto.status}`,
       userId,
+      companyId: code.companyId?.toString(),
     });
 
     this.socketGateway.emitToCompany(code.companyId?.toString(), 'issuedCodeUpdated', populatedCode);

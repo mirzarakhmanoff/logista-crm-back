@@ -37,6 +37,7 @@ export class RateQuotesService {
       action: 'updated',
       message: `Rate quote created: ${createDto.fromCity} -> ${createDto.toCity}`,
       userId: createdById,
+      companyId,
     });
 
     this.socketGateway.emitToCompany(companyId, 'rateQuoteCreated', savedQuote);
@@ -81,6 +82,7 @@ export class RateQuotesService {
       action: 'updated',
       message: `Rate quote updated`,
       userId,
+      companyId: quote.companyId?.toString(),
     });
 
     this.socketGateway.emitToCompany(quote.companyId?.toString(), 'rateQuoteUpdated', quote);

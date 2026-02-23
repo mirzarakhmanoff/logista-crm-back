@@ -40,6 +40,7 @@ export class ShipmentsService {
       action: 'updated',
       message: `Shipment created${createDto.shipmentNo ? `: ${createDto.shipmentNo}` : ''}`,
       userId: createdById,
+      companyId,
     });
 
     this.socketGateway.emitToCompany(companyId, 'shipmentCreated', savedShipment);
@@ -103,6 +104,7 @@ export class ShipmentsService {
       action: 'updated',
       message: `Shipment updated${updateDto.status ? `, status: ${updateDto.status}` : ''}`,
       userId,
+      companyId: shipment.companyId?.toString(),
     });
 
     this.socketGateway.emitToCompany(shipment.companyId?.toString(), 'shipmentUpdated', populatedShipment);

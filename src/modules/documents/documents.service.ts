@@ -143,6 +143,7 @@ export class DocumentsService {
       action: 'updated',
       message: 'Document updated',
       userId,
+      companyId: document.companyId?.toString(),
     });
 
     this.socketGateway.emitToCompany(document.companyId?.toString(), 'documentUpdated', document);
@@ -197,6 +198,7 @@ export class DocumentsService {
       action: 'status_changed',
       message: `Status changed from ${oldStatus} to ${updateStatusDto.status}`,
       userId,
+      companyId: updatedDocument.companyId?.toString(),
     });
 
     this.socketGateway.emitToCompany(updatedDocument.companyId?.toString(), 'documentStatusChanged', {
@@ -275,6 +277,7 @@ export class DocumentsService {
         action: 'file_uploaded',
         message: `File uploaded: ${fileData.filename}`,
         userId: fileData.uploadedBy,
+        companyId: document.companyId?.toString(),
       });
 
       this.socketGateway.emitToCompany(document.companyId?.toString(), 'fileUploaded', {
@@ -323,6 +326,7 @@ export class DocumentsService {
       action: 'deleted',
       message: `File deleted: ${fileName}`,
       userId,
+      companyId: doc.companyId?.toString(),
     });
 
     this.socketGateway.emitToCompany(doc.companyId?.toString(), 'fileDeleted', {
@@ -411,6 +415,7 @@ export class DocumentsService {
       metadata: {
         content: message,
       },
+      companyId: document.companyId?.toString(),
     });
 
     const populatedComment = await comment.populate('userId', 'fullName email avatar');

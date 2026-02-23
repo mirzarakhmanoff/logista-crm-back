@@ -62,6 +62,7 @@ export class OperationalPaymentsService {
       action: 'created',
       message: `Операционный платеж ${saved.paymentNumber} создан${files.length > 0 ? ` с ${files.length} файлами` : ''}`,
       userId: createdById,
+      companyId,
     });
 
     // Emit socket event
@@ -223,6 +224,7 @@ export class OperationalPaymentsService {
       action: 'updated',
       message: `Операционный платеж ${payment.paymentNumber} обновлен${updateDto.status ? ` (статус: ${updateDto.status})` : ''}${files.length > 0 ? ` (добавлено ${files.length} файлов)` : ''}`,
       userId,
+      companyId: payment.companyId?.toString(),
     });
 
     // Emit socket event
@@ -258,6 +260,7 @@ export class OperationalPaymentsService {
       action: 'deleted',
       message: `Операционный платеж ${payment.paymentNumber} удален`,
       userId,
+      companyId: payment.companyId?.toString(),
     });
 
     // Emit socket event
@@ -360,6 +363,7 @@ export class OperationalPaymentsService {
       action: 'file_uploaded',
       message: `Файл ${file.filename} загружен к платежу ${payment.paymentNumber}`,
       userId,
+      companyId: payment.companyId?.toString(),
     });
 
     return this.findOne(id);
@@ -387,6 +391,7 @@ export class OperationalPaymentsService {
       action: 'file_deleted',
       message: `Файл удален из платежа ${payment.paymentNumber}`,
       userId,
+      companyId: payment.companyId?.toString(),
     });
 
     return this.findOne(id);

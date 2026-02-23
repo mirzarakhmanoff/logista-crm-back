@@ -188,6 +188,7 @@ export class InternalDocumentsService {
       action: 'created',
       message: `Internal document created: ${populated.documentNumber}`,
       userId,
+      companyId,
     });
 
     this.socketGateway.emitToCompany(companyId, 'internalDocumentCreated', populated);
@@ -283,6 +284,7 @@ export class InternalDocumentsService {
       action: 'updated',
       message: 'Internal document updated',
       userId,
+      companyId: document.companyId?.toString(),
     });
 
     this.socketGateway.emitToCompany(document.companyId?.toString(), 'internalDocumentUpdated', document);
@@ -339,6 +341,7 @@ export class InternalDocumentsService {
       action: 'status_changed',
       message: `Status changed from ${oldStatus} to ${dto.status}`,
       userId,
+      companyId: updated.companyId?.toString(),
     });
 
     this.socketGateway.emitToCompany(updated.companyId?.toString(), 'internalDocumentStatusChanged', {
@@ -450,6 +453,7 @@ export class InternalDocumentsService {
         action: 'file_uploaded',
         message: `File uploaded: ${f.filename}`,
         userId: f.uploadedBy,
+        companyId: document.companyId?.toString(),
       });
     }
 
@@ -523,6 +527,7 @@ export class InternalDocumentsService {
       action: 'deleted',
       message: `File deleted: ${fileName}`,
       userId,
+      companyId: doc.companyId?.toString(),
     });
 
     this.socketGateway.emitToCompany(doc.companyId?.toString(), 'internalDocumentFileDeleted', {
@@ -561,6 +566,7 @@ export class InternalDocumentsService {
       message,
       userId,
       metadata: { content: message },
+      companyId: document.companyId?.toString(),
     });
 
     const populatedComment = await comment.populate(

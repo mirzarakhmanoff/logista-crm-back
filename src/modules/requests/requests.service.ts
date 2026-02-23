@@ -139,6 +139,7 @@ export class RequestsService {
       action: 'created',
       message: `Request created`,
       userId: createdById,
+      companyId,
     });
 
     this.socketGateway.emitToCompany(companyId, 'requestCreated', populatedRequest);
@@ -263,6 +264,7 @@ export class RequestsService {
       action: 'updated',
       message: 'Request updated',
       userId,
+      companyId: request.companyId?.toString(),
     });
 
     this.socketGateway.emitToCompany(request.companyId?.toString(), 'requestUpdated', request);
@@ -325,6 +327,7 @@ export class RequestsService {
       action: 'status_changed',
       message: `Status changed from ${oldStatus} to ${toKey}`,
       userId,
+      companyId: populatedRequest.companyId?.toString(),
     });
 
     this.socketGateway.emitToCompany(populatedRequest.companyId?.toString(), 'requestStatusChanged', {
@@ -392,6 +395,7 @@ export class RequestsService {
         action: 'status_changed',
         message: `Status changed from ${oldStatus} to ${moveDto.toStatusKey}`,
         userId,
+        companyId: populatedRequest.companyId?.toString(),
       });
     }
 
@@ -503,6 +507,7 @@ export class RequestsService {
       message: dto.content,
       userId,
       metadata: { content: dto.content },
+      companyId: request.companyId?.toString(),
     });
 
     this.socketGateway.emitToCompany(request.companyId?.toString(), 'requestCommentAdded', {
@@ -563,6 +568,7 @@ export class RequestsService {
         action: 'file_uploaded',
         message: `File uploaded: ${file.originalname}`,
         userId,
+        companyId: request.companyId?.toString(),
       });
     }
 
@@ -645,6 +651,7 @@ export class RequestsService {
       action: 'deleted',
       message: `File deleted: ${file.originalName}`,
       userId,
+      companyId: request.companyId?.toString(),
     });
 
     this.socketGateway.emitToCompany(request.companyId?.toString(), 'requestFileDeleted', {

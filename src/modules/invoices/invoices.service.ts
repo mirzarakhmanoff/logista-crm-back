@@ -42,6 +42,7 @@ export class InvoicesService {
       action: 'updated',
       message: `Invoice created: ${createDto.number}`,
       userId: createdById,
+      companyId,
     });
 
     this.socketGateway.emitToCompany(companyId, 'invoiceCreated', savedInvoice);
@@ -96,6 +97,7 @@ export class InvoicesService {
       action: 'updated',
       message: `Invoice ${invoice.number} updated`,
       userId,
+      companyId: invoice.companyId?.toString(),
     });
 
     this.socketGateway.emitToCompany(invoice.companyId?.toString(), 'invoiceUpdated', invoice);
@@ -151,6 +153,7 @@ export class InvoicesService {
       action: 'updated',
       message: `Payment of ${payDto.amount} ${invoice.currency} received for invoice ${invoice.number}`,
       userId,
+      companyId: invoice.companyId?.toString(),
     });
 
     this.socketGateway.emitToCompany(invoice.companyId?.toString(), 'invoicePaid', populatedInvoice);
