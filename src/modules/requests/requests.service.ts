@@ -276,6 +276,7 @@ export class RequestsService {
       entityType: 'REQUEST',
       entityId: id,
       createdBy: userId,
+      companyId: request.companyId?.toString(),
     });
 
     return request;
@@ -343,6 +344,7 @@ export class RequestsService {
       entityType: 'REQUEST',
       entityId: id,
       createdBy: userId,
+      companyId: populatedRequest.companyId?.toString(),
     });
 
     return populatedRequest;
@@ -413,6 +415,7 @@ export class RequestsService {
         entityType: 'REQUEST',
         entityId: id,
         createdBy: userId,
+        companyId: populatedRequest.companyId?.toString(),
       });
     }
 

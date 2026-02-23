@@ -200,6 +200,7 @@ export class InternalDocumentsService {
       entityType: 'INTERNAL_DOCUMENT',
       entityId: populated._id.toString(),
       createdBy: userId,
+      companyId,
     });
 
     return populated;
@@ -296,6 +297,7 @@ export class InternalDocumentsService {
       entityType: 'INTERNAL_DOCUMENT',
       entityId: id,
       createdBy: userId,
+      companyId: document.companyId?.toString(),
     });
 
     return document;

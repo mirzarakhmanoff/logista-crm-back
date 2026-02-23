@@ -68,6 +68,7 @@ export class DocumentsService {
       entityType: 'DOCUMENT',
       entityId: populatedDocument._id.toString(),
       createdBy: createdById,
+      companyId,
     });
 
     return populatedDocument;
@@ -155,6 +156,7 @@ export class DocumentsService {
       entityType: 'DOCUMENT',
       entityId: id,
       createdBy: userId,
+      companyId: document.companyId?.toString(),
     });
 
     return document;
@@ -215,6 +217,7 @@ export class DocumentsService {
       entityType: 'DOCUMENT',
       entityId: id,
       createdBy: userId,
+      companyId: updatedDocument.companyId?.toString(),
     });
 
     return updatedDocument;

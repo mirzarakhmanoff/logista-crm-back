@@ -75,6 +75,7 @@ export class OperationalPaymentsService {
       entityType: 'OPERATIONAL_PAYMENT',
       entityId: saved._id.toString(),
       createdBy: createdById,
+      companyId,
     });
 
     return this.findOne(saved._id.toString());
@@ -238,6 +239,7 @@ export class OperationalPaymentsService {
         entityType: 'OPERATIONAL_PAYMENT',
         entityId: id,
         createdBy: userId,
+        companyId: payment.companyId?.toString(),
       });
     }
 

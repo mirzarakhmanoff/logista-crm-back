@@ -54,6 +54,7 @@ export class InvoicesService {
       entityType: 'INVOICE',
       entityId: savedInvoice._id.toString(),
       createdBy: createdById,
+      companyId,
     });
 
     return savedInvoice;
@@ -109,6 +110,7 @@ export class InvoicesService {
       entityType: 'INVOICE',
       entityId: id,
       createdBy: userId,
+      companyId: invoice.companyId?.toString(),
     });
 
     return invoice;
@@ -165,6 +167,7 @@ export class InvoicesService {
       entityType: 'INVOICE',
       entityId: id,
       createdBy: userId,
+      companyId: invoice.companyId?.toString(),
     });
 
     return populatedInvoice;

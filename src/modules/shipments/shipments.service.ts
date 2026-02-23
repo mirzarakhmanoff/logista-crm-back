@@ -52,6 +52,7 @@ export class ShipmentsService {
       entityType: 'SHIPMENT',
       entityId: savedShipment._id.toString(),
       createdBy: createdById,
+      companyId,
     });
 
     return savedShipment;
@@ -116,6 +117,7 @@ export class ShipmentsService {
       entityType: 'SHIPMENT',
       entityId: id,
       createdBy: userId,
+      companyId: shipment.companyId?.toString(),
     });
 
     return populatedShipment;

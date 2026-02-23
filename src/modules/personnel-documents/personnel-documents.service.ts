@@ -194,6 +194,7 @@ export class PersonnelDocumentsService {
       entityType: 'PERSONNEL_DOCUMENT',
       entityId: populated._id.toString(),
       createdBy: userId,
+      companyId,
     });
 
     return populated;
@@ -296,6 +297,7 @@ export class PersonnelDocumentsService {
       entityType: 'PERSONNEL_DOCUMENT',
       entityId: id,
       createdBy: userId,
+      companyId: document.companyId?.toString(),
     });
 
     return document;

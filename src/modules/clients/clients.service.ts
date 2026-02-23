@@ -145,6 +145,7 @@ export class ClientsService {
       entityType: 'CLIENT',
       entityId: id,
       createdBy: updatedById,
+      companyId: client.companyId?.toString(),
     });
 
     return client;
