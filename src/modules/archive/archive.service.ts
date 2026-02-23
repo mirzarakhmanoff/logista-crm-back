@@ -150,7 +150,7 @@ export class ArchiveService {
 
     const baseFilter: any = {
       isArchived: true,
-      companyId: new Types.ObjectId(companyId),
+      companyId: companyId,
       ...dateFilter,
     };
 
@@ -424,7 +424,7 @@ export class ArchiveService {
   }
 
   async getArchiveStats(companyId: string): Promise<any> {
-    const cid = new Types.ObjectId(companyId);
+    const cid = companyId;
     const [
       clientsCount,
       requestsCount,

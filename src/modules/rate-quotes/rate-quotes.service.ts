@@ -26,7 +26,7 @@ export class RateQuotesService {
     const quote = new this.rateQuoteModel({
       ...createDto,
       createdBy: createdById,
-      companyId: new Types.ObjectId(companyId),
+      companyId: companyId,
     });
 
     const savedQuote = await quote.save();

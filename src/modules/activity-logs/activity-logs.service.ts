@@ -44,7 +44,7 @@ export class ActivityLogsService {
   async findRecent(limit = 100, companyId?: string): Promise<ActivityLog[]> {
     const query: any = {};
     if (companyId) {
-      query.companyId = new Types.ObjectId(companyId);
+      query.companyId = companyId;
     }
     return this.activityLogModel
       .find(query)

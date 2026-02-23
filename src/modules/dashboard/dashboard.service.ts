@@ -22,7 +22,7 @@ export class DashboardService {
   ) {}
 
   async getSummary(companyId: string): Promise<any> {
-    const cid = new Types.ObjectId(companyId);
+    const cid = companyId;
     const [
       newClientsCount,
       ourClientsCount,
@@ -59,7 +59,7 @@ export class DashboardService {
   }
 
   async getRequestStats(companyId: string): Promise<any> {
-    const cid = new Types.ObjectId(companyId);
+    const cid = companyId;
     const newClientStats = await this.requestModel.aggregate([
       { $match: { companyId: cid, type: RequestType.NEW_CLIENT } },
       { $group: { _id: '$statusKey', count: { $sum: 1 } } },
@@ -105,7 +105,7 @@ export class DashboardService {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfYear = new Date(now.getFullYear(), 0, 1);
     const last12Months = new Date(now.getFullYear(), now.getMonth() - 11, 1);
-    const cid = new Types.ObjectId(companyId);
+    const cid = companyId;
 
     const [
 
@@ -427,7 +427,7 @@ export class DashboardService {
   }
 
   async getStatisticsByDateRange(startDate: Date, endDate: Date, companyId: string): Promise<any> {
-    const cid = new Types.ObjectId(companyId);
+    const cid = companyId;
     const [
       requestsInRange,
       requestsByTypeInRange,
@@ -537,7 +537,7 @@ export class DashboardService {
 
   async getManagerStatistics(managerId: string, companyId: string): Promise<any> {
     const managerObjectId = new Types.ObjectId(managerId);
-    const cid = new Types.ObjectId(companyId);
+    const cid = companyId;
 
     const [
       totalAssigned,

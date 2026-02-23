@@ -62,13 +62,13 @@ export class UsersService {
 
   async findAll(companyId?: string): Promise<User[]> {
     const filter: any = {};
-    if (companyId) filter.companyId = new Types.ObjectId(companyId);
+    if (companyId) filter.companyId = companyId;
     return this.userModel.find(filter).select('-password').exec();
   }
 
   async findAllBasic(companyId?: string): Promise<Pick<User, '_id' | 'fullName' | 'role' | 'avatar'>[]> {
     const filter: any = { isActive: true };
-    if (companyId) filter.companyId = new Types.ObjectId(companyId);
+    if (companyId) filter.companyId = companyId;
     return this.userModel
       .find(filter)
       .select('fullName role avatar')
@@ -77,7 +77,7 @@ export class UsersService {
 
   async findByRole(role: UserRole, companyId?: string): Promise<User[]> {
     const filter: any = { role };
-    if (companyId) filter.companyId = new Types.ObjectId(companyId);
+    if (companyId) filter.companyId = companyId;
     return this.userModel.find(filter).select('-password').exec();
   }
 
@@ -285,7 +285,7 @@ export class UsersService {
 
   async toggleActive(userId: string, companyId: string): Promise<User> {
     const user = await this.userModel
-      .findOne({ _id: userId, companyId: new Types.ObjectId(companyId) })
+      .findOne({ _id: userId, companyId: companyId })
       .select('-password')
       .exec();
 
@@ -321,7 +321,7 @@ export class UsersService {
 
   async getInvitationStats(companyId?: string): Promise<any> {
     const filter: any = {};
-    if (companyId) filter.companyId = new Types.ObjectId(companyId);
+    if (companyId) filter.companyId = companyId;
     const [pending, accepted, expired, total] = await Promise.all([
       this.userModel.countDocuments({ ...filter, invitationStatus: InvitationStatus.PENDING }),
       this.userModel.countDocuments({ ...filter, invitationStatus: InvitationStatus.ACCEPTED }),

@@ -112,7 +112,7 @@ export class EmailService {
       createdBy: Types.ObjectId.isValid(userId)
         ? new Types.ObjectId(userId)
         : userId,
-      companyId: new Types.ObjectId(companyId),
+      companyId: companyId,
     });
 
     const saved = await account.save();
@@ -133,7 +133,7 @@ export class EmailService {
 
   async findAllAccounts(companyId: string): Promise<EmailAccount[]> {
     return this.accountModel
-      .find({ companyId: new Types.ObjectId(companyId) })
+      .find({ companyId: companyId })
       .populate('createdBy', 'fullName email')
       .sort({ createdAt: -1 })
       .exec();
@@ -266,7 +266,7 @@ export class EmailService {
       this.logger.log(`Gmail email resolved: ${emailAddress}`);
 
       const existing = await this.accountModel
-        .findOne({ emailAddress, companyId: new Types.ObjectId(companyId) })
+        .findOne({ emailAddress, companyId: companyId })
         .exec();
       if (existing) {
         existing.credentials = {
@@ -294,7 +294,7 @@ export class EmailService {
         },
         syncEnabled: true,
         createdBy: new Types.ObjectId(userId),
-        companyId: new Types.ObjectId(companyId),
+        companyId: companyId,
       });
 
       const saved = await account.save();
@@ -325,7 +325,7 @@ export class EmailService {
     page: number;
     limit: number;
   }> {
-    const query: any = { companyId: new Types.ObjectId(companyId) };
+    const query: any = { companyId: companyId };
     const page = filterDto.page || 1;
     const limit = filterDto.limit || 20;
     const skip = (page - 1) * limit;
@@ -481,7 +481,7 @@ export class EmailService {
       threadId: result.messageId,
       folder: 'SENT',
       sentBy: userId,
-      companyId: new Types.ObjectId(companyId),
+      companyId: companyId,
     });
 
     const savedMessage = await message.save();
@@ -561,7 +561,7 @@ export class EmailService {
       folder: 'SENT',
       attachments: savedAttachments,
       sentBy: userId,
-      companyId: new Types.ObjectId(companyId),
+      companyId: companyId,
     });
 
     const savedMessage = await message.save();
@@ -669,7 +669,7 @@ export class EmailService {
       folder: 'SENT',
       linkedEntities: original.linkedEntities || [],
       sentBy: userId,
-      companyId: new Types.ObjectId(companyId),
+      companyId: companyId,
     });
 
     const savedMessage = await message.save();
@@ -776,7 +776,7 @@ export class EmailService {
     limit: number;
   }> {
     const query = {
-      companyId: new Types.ObjectId(companyId),
+      companyId: companyId,
       linkedEntities: {
         $elemMatch: {
           entityType: 'CLIENT',
@@ -813,7 +813,7 @@ export class EmailService {
     limit: number;
   }> {
     const query = {
-      companyId: new Types.ObjectId(companyId),
+      companyId: companyId,
       linkedEntities: {
         $elemMatch: {
           entityType: 'REQUEST',
@@ -907,7 +907,7 @@ export class EmailService {
     receivedToday: number;
   }> {
     const accounts = await this.accountModel
-      .find({ companyId: new Types.ObjectId(companyId) })
+      .find({ companyId: companyId })
       .exec();
 
     const accountIds = accounts.map((a) => a._id);

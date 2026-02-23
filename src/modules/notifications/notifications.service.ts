@@ -51,7 +51,7 @@ export class NotificationsService {
 
     const query: any = { createdBy: { $ne: userObjectId } };
     if (companyId) {
-      query.companyId = new Types.ObjectId(companyId);
+      query.companyId = companyId;
     }
 
     if (filterDto.unreadOnly) {
@@ -69,7 +69,7 @@ export class NotificationsService {
         .exec(),
       this.notificationModel.countDocuments(query),
       this.notificationModel.countDocuments({
-        ...(companyId ? { companyId: new Types.ObjectId(companyId) } : {}),
+        ...(companyId ? { companyId: companyId } : {}),
         createdBy: { $ne: userObjectId },
         readBy: { $ne: userObjectId },
       }),
@@ -93,7 +93,7 @@ export class NotificationsService {
       readBy: { $ne: userObjectId },
     };
     if (companyId) {
-      query.companyId = new Types.ObjectId(companyId);
+      query.companyId = companyId;
     }
     return this.notificationModel.countDocuments(query);
   }
@@ -122,7 +122,7 @@ export class NotificationsService {
     const userObjectId = new Types.ObjectId(userId);
     const filter: any = { readBy: { $ne: userObjectId } };
     if (companyId) {
-      filter.companyId = new Types.ObjectId(companyId);
+      filter.companyId = companyId;
     }
 
     await this.notificationModel.updateMany(

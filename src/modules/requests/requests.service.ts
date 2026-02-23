@@ -71,7 +71,7 @@ export class RequestsService {
         clientNumber: this.generateClientNumber(clientType),
         type: clientType,
         createdBy: createdById,
-        companyId: new Types.ObjectId(companyId),
+        companyId: companyId,
       });
       const savedClient = await newClient.save();
       resolvedClientId = savedClient._id.toString();
@@ -126,7 +126,7 @@ export class RequestsService {
       assignedTo: createDto.assignedTo ?? (managerIsId ? managerValue : undefined),
       manager: managerIsId ? undefined : managerValue,
       position,
-      companyId: new Types.ObjectId(companyId),
+      companyId: companyId,
     });
 
     const savedRequest = await request.save();
@@ -159,7 +159,7 @@ export class RequestsService {
 
   async findAll(filterDto: FilterRequestDto, companyId: string): Promise<{ data: Request[]; total: number; page: number; limit: number }> {
     const query: any = {
-      companyId: new Types.ObjectId(companyId),
+      companyId: companyId,
       isArchived: { $ne: true },
     };
     const page = filterDto.page || 1;
@@ -424,7 +424,7 @@ export class RequestsService {
 
   async getKanban(type: RequestType, companyId: string): Promise<any> {
     const statuses = this.getStatusDefinitions(type);
-    const companyObjectId = new Types.ObjectId(companyId);
+    const companyObjectId = companyId;
 
     const [requests, completedRequests] = await Promise.all([
       this.requestModel

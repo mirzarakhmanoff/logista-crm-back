@@ -38,7 +38,7 @@ export class ChatService {
   // ==================== DEFAULT GROUP ====================
 
   async getOrCreateDefaultGroup(companyId: string) {
-    const companyObjectId = new Types.ObjectId(companyId);
+    const companyObjectId = companyId;
 
     let defaultGroup = await this.conversationModel
       .findOne({ isDefault: true, companyId: companyObjectId })
@@ -105,7 +105,7 @@ export class ChatService {
 
   async ensureUserInDefaultGroup(userId: string, companyId: string) {
     const userObjectId = new Types.ObjectId(userId);
-    const companyObjectId = new Types.ObjectId(companyId);
+    const companyObjectId = companyId;
 
     const defaultGroup = await this.conversationModel
       .findOne({ isDefault: true, companyId: companyObjectId })
@@ -136,7 +136,7 @@ export class ChatService {
     companyId: string,
   ) {
     const userObjectId = new Types.ObjectId(userId);
-    const companyObjectId = new Types.ObjectId(companyId);
+    const companyObjectId = companyId;
     const participantIds = [
       ...new Set([userId, ...dto.participantIds]),
     ].map((id) => new Types.ObjectId(id));
@@ -231,7 +231,7 @@ export class ChatService {
     await this.ensureUserInDefaultGroup(userId, companyId);
 
     const userObjectId = new Types.ObjectId(userId);
-    const companyObjectId = new Types.ObjectId(companyId);
+    const companyObjectId = companyId;
 
     const pipeline: any[] = [
       { $match: { participants: userObjectId, companyId: companyObjectId } },
@@ -611,7 +611,7 @@ export class ChatService {
       .find({
         _id: { $in: onlineIds.map((id) => new Types.ObjectId(id)) },
         isActive: true,
-        companyId: new Types.ObjectId(companyId),
+        companyId: companyId,
       })
       .select('fullName email avatar role')
       .exec();

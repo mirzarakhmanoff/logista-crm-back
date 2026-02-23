@@ -31,7 +31,7 @@ export class InvoicesService {
       ...createDto,
       createdBy: createdById,
       issuedAt: createDto.issuedAt || new Date(),
-      companyId: new Types.ObjectId(companyId),
+      companyId: companyId,
     });
 
     const savedInvoice = await invoice.save();

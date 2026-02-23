@@ -33,7 +33,7 @@ export class IssuedCodesService {
       requestId: new Types.ObjectId(createDto.requestId),
       issuedBy: new Types.ObjectId(issuedById),
       issuedAt: new Date(),
-      companyId: new Types.ObjectId(companyId),
+      companyId: companyId,
     });
 
     const savedCode = await issuedCode.save();
