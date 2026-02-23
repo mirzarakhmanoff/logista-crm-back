@@ -123,13 +123,48 @@ export class PersonnelDocumentsController {
 
   @Post()
   @Permissions('personnel-documents.create')
-  @ApiOperation({ summary: 'Create personnel document' })
+  @UseInterceptors(AnyFilesInterceptor())
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Create personnel document with optional files' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['title', 'category'],
+      properties: {
+        title: { type: 'string' },
+        description: { type: 'string' },
+        category: { type: 'string' },
+        type: { type: 'string' },
+        status: { type: 'string' },
+        date: { type: 'string', format: 'date-time' },
+        assignedTo: { type: 'string' },
+        files: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+        },
+      },
+    },
+  })
   @ApiResponse({ status: 201, description: 'Document created successfully' })
   async createDocument(
     @Body() dto: CreatePersonnelDocumentDto,
+    @UploadedFiles() files: Express.Multer.File[],
     @CurrentUser() user: any,
   ) {
-    return this.service.createDocument(dto, user.userId || user.sub, user.companyId);
+    const document = await this.service.createDocument(dto, user.userId || user.sub, user.companyId);
+
+    if (files && files.length > 0) {
+      const fileDataList = files.map((file) => ({
+        filename: file.originalname,
+        path: file.path,
+        mimetype: file.mimetype,
+        size: file.size,
+        uploadedBy: user.userId || user.sub,
+      }));
+      return this.service.addFiles(document._id.toString(), fileDataList);
+    }
+
+    return document;
   }
 
   @Get()
