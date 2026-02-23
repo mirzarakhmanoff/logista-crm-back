@@ -35,17 +35,19 @@ export class PersonnelDocumentsService {
   async createCategory(
     dto: CreatePersonnelDocumentCategoryDto,
     userId: string,
+    companyId: string,
   ): Promise<PersonnelDocumentCategory> {
     const category = new this.categoryModel({
       ...dto,
       createdBy: userId,
+      companyId,
     });
     return category.save();
   }
 
-  async findAllCategories(): Promise<any[]> {
+  async findAllCategories(companyId: string): Promise<any[]> {
     const categories = await this.categoryModel
-      .find({ isArchived: false })
+      .find({ isArchived: false, companyId: new Types.ObjectId(companyId) })
       .populate('createdBy', 'fullName avatar email')
       .sort({ createdAt: 1 })
       .exec();
@@ -110,23 +112,25 @@ export class PersonnelDocumentsService {
 
   // ==================== GLOBAL STATS ====================
 
-  async getGlobalStats(): Promise<{
+  async getGlobalStats(companyId: string): Promise<{
     total: number;
     active: number;
     underReview: number;
     archived: number;
   }> {
+    const filter = { companyId: new Types.ObjectId(companyId), isArchived: false };
     const [total, active, underReview, archived] = await Promise.all([
-      this.documentModel.countDocuments({ isArchived: false }),
+      this.documentModel.countDocuments(filter),
       this.documentModel.countDocuments({
+        ...filter,
         status: PersonnelDocumentStatus.ACTIVE,
-        isArchived: false,
       }),
       this.documentModel.countDocuments({
+        ...filter,
         status: PersonnelDocumentStatus.UNDER_REVIEW,
-        isArchived: false,
       }),
       this.documentModel.countDocuments({
+        companyId: new Types.ObjectId(companyId),
         isArchived: true,
       }),
     ]);
@@ -383,9 +387,9 @@ export class PersonnelDocumentsService {
     return { total, active, underReview };
   }
 
-  async getDocumentStatsByStatus(categoryId?: string) {
-    const match: any = { isArchived: false };
-    if (categoryId) match.category = categoryId;
+  async getDocumentStatsByStatus(companyId: string, categoryId?: string) {
+    const match: any = { companyId: new Types.ObjectId(companyId), isArchived: false };
+    if (categoryId) match.category = new Types.ObjectId(categoryId);
 
     return this.documentModel.aggregate([
       { $match: match },

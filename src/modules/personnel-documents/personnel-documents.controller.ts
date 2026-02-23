@@ -50,7 +50,7 @@ export class PersonnelDocumentsController {
     @Body() dto: CreatePersonnelDocumentCategoryDto,
     @CurrentUser() user: any,
   ) {
-    return this.service.createCategory(dto, user.userId);
+    return this.service.createCategory(dto, user.userId, user.companyId);
   }
 
   @Get('categories')
@@ -58,8 +58,8 @@ export class PersonnelDocumentsController {
     summary: 'Get all personnel document categories with document counts',
   })
   @ApiResponse({ status: 200, description: 'List of categories' })
-  async findAllCategories() {
-    return this.service.findAllCategories();
+  async findAllCategories(@CurrentUser() user: any) {
+    return this.service.findAllCategories(user.companyId);
   }
 
   @Get('categories/:id')
@@ -96,15 +96,18 @@ export class PersonnelDocumentsController {
     summary: 'Get global stats (total, active, under review, archived)',
   })
   @ApiResponse({ status: 200, description: 'Global statistics' })
-  async getGlobalStats() {
-    return this.service.getGlobalStats();
+  async getGlobalStats(@CurrentUser() user: any) {
+    return this.service.getGlobalStats(user.companyId);
   }
 
   @Get('stats/by-status')
   @ApiOperation({ summary: 'Get document counts by status' })
   @ApiResponse({ status: 200, description: 'Status statistics' })
-  async getStatsByStatus(@Query('categoryId') categoryId?: string) {
-    return this.service.getDocumentStatsByStatus(categoryId);
+  async getStatsByStatus(
+    @CurrentUser() user: any,
+    @Query('categoryId') categoryId?: string,
+  ) {
+    return this.service.getDocumentStatsByStatus(user.companyId, categoryId);
   }
 
   @Get('categories/:id/stats')
