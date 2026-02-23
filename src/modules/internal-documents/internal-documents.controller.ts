@@ -50,14 +50,14 @@ export class InternalDocumentsController {
     @Body() dto: CreateDocumentCategoryDto,
     @CurrentUser() user: any,
   ) {
-    return this.service.createCategory(dto, user.userId);
+    return this.service.createCategory(dto, user.userId, user.companyId);
   }
 
   @Get('categories')
   @ApiOperation({ summary: 'Get all document categories with file counts' })
   @ApiResponse({ status: 200, description: 'List of categories' })
-  async findAllCategories() {
-    return this.service.findAllCategories();
+  async findAllCategories(@CurrentUser() user: any) {
+    return this.service.findAllCategories(user.companyId);
   }
 
   @Get('categories/:id')

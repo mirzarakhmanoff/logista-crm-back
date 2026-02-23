@@ -35,17 +35,19 @@ export class InternalDocumentsService {
   async createCategory(
     dto: CreateDocumentCategoryDto,
     userId: string,
+    companyId: string,
   ): Promise<DocumentCategory> {
     const category = new this.categoryModel({
       ...dto,
       createdBy: userId,
+      companyId,
     });
     return category.save();
   }
 
-  async findAllCategories(): Promise<any[]> {
+  async findAllCategories(companyId: string): Promise<any[]> {
     const categories = await this.categoryModel
-      .find({ isArchived: false })
+      .find({ isArchived: false, companyId: new Types.ObjectId(companyId) })
       .populate('createdBy', 'fullName avatar email')
       .sort({ createdAt: 1 })
       .exec();
