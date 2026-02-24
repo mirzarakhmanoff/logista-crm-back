@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { IssuedCode, CodeStatus } from './schemas/issued-code.schema';
+import { IssuedCode, CodeStatus, IssuedFor } from './schemas/issued-code.schema';
 import { CreateIssuedCodeDto } from './dto/create-issued-code.dto';
 import { UpdateIssuedCodeDto } from './dto/update-issued-code.dto';
 import { Request } from '../requests/schemas/request.schema';
@@ -116,9 +116,13 @@ export class IssuedCodesService {
     return populatedCode;
   }
 
-  async getActiveCodes(): Promise<IssuedCode[]> {
+  async getActiveCodes(issuedFor?: IssuedFor): Promise<IssuedCode[]> {
+    const filter: any = { status: CodeStatus.ACTIVE, isArchived: { $ne: true } };
+    if (issuedFor) {
+      filter.issuedFor = issuedFor;
+    }
     return this.issuedCodeModel
-      .find({ status: CodeStatus.ACTIVE, isArchived: { $ne: true } })
+      .find(filter)
       .populate('requestId')
       .populate('issuedBy', 'fullName email')
       .sort({ issuedAt: -1 })

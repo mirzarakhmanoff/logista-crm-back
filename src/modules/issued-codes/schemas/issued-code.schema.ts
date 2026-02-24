@@ -14,6 +14,11 @@ export enum CodeStatus {
   CANCELLED = 'CANCELLED',
 }
 
+export enum IssuedFor {
+  AGENT = 'agent',
+  CLIENT = 'client',
+}
+
 @Schema({ timestamps: true, collection: 'issued_codes' })
 export class IssuedCode extends Document {
   @Prop({ type: Types.ObjectId, ref: 'Request', required: true })
@@ -24,6 +29,9 @@ export class IssuedCode extends Document {
 
   @Prop({ type: String, enum: CodeType, default: CodeType.OTHER })
   codeType: CodeType;
+
+  @Prop({ type: String, enum: IssuedFor, required: true })
+  issuedFor: IssuedFor;
 
   @Prop({ type: String, enum: CodeStatus, default: CodeStatus.ACTIVE })
   status: CodeStatus;

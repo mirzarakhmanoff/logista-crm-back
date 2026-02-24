@@ -1,5 +1,5 @@
 import { IsString, IsEnum, IsOptional, IsMongoId } from 'class-validator';
-import { CodeType } from '../schemas/issued-code.schema';
+import { CodeType, IssuedFor } from '../schemas/issued-code.schema';
 
 export class CreateIssuedCodeDto {
   @IsMongoId()
@@ -7,6 +7,9 @@ export class CreateIssuedCodeDto {
 
   @IsString()
   code: string;
+
+  @IsEnum(IssuedFor)
+  issuedFor: IssuedFor;
 
   @IsOptional()
   @IsEnum(CodeType)

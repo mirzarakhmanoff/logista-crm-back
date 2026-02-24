@@ -8,11 +8,13 @@ import {
   Delete,
   HttpCode,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { IssuedCodesService } from './issued-codes.service';
 import { CreateIssuedCodeDto } from './dto/create-issued-code.dto';
 import { UpdateIssuedCodeDto } from './dto/update-issued-code.dto';
+import { IssuedFor } from './schemas/issued-code.schema';
 import { Permissions } from '../../common/decorators/permissions.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
@@ -42,8 +44,8 @@ export class IssuedCodesController {
   }
 
   @Get('codes')
-  async getActiveCodes() {
-    return this.issuedCodesService.getActiveCodes();
+  async getActiveCodes(@Query('issuedFor') issuedFor?: IssuedFor) {
+    return this.issuedCodesService.getActiveCodes(issuedFor);
   }
 
   @Get('codes/search/:code')
