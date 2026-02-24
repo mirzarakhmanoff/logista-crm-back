@@ -3,6 +3,8 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { PermissionsService } from './permissions.service';
 import { UpdateRolePermissionDto } from './dto/update-role-permission.dto';
 import { Permissions } from '../../common/decorators/permissions.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/schemas/user.schema';
 
 @ApiTags('Permissions')
 @ApiBearerAuth()
@@ -29,7 +31,7 @@ export class PermissionsController {
   }
 
   @Put(':role')
-  @Permissions('users.update')
+  @Roles(UserRole.SUPER_ADMIN)
   async updateRolePermissions(
     @Param('role') role: string,
     @Body() dto: UpdateRolePermissionDto,

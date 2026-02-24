@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dir /b \"C:\\\\Users\\\\zippe\"\" | findstr -i \"logista \")"
+      "Bash(dir /b \"C:\\\\Users\\\\zippe\"\" | findstr -i \"logista \")",
+      "Bash(head:*)"
     ]
   }
 }
