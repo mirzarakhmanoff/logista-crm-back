@@ -1,7 +1,6 @@
 import { Controller, Get, Put, Param, Body } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { PermissionsService } from './permissions.service';
-import { UpdateRolePermissionDto } from './dto/update-role-permission.dto';
 import { Permissions } from '../../common/decorators/permissions.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
@@ -34,8 +33,8 @@ export class PermissionsController {
   @Roles(UserRole.SUPER_ADMIN)
   async updateRolePermissions(
     @Param('role') role: string,
-    @Body() dto: UpdateRolePermissionDto,
+    @Body() permissions: Record<string, string[]>,
   ) {
-    return this.permissionsService.updateRolePermissions(role, dto.permissions);
+    return this.permissionsService.updateRolePermissions(role, permissions);
   }
 }

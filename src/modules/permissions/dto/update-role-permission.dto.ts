@@ -1,6 +1,5 @@
-import { IsObject } from 'class-validator';
+import { IsArray, IsString } from 'class-validator';
 
 export class UpdateRolePermissionDto {
-  @IsObject()
-  permissions: Record<string, string[]>;
+  [module: string]: string[];
 }
