@@ -9,6 +9,7 @@ import {
   HttpCode,
   HttpStatus,
   Query,
+  ParseEnumPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { IssuedCodesService } from './issued-codes.service';
@@ -44,7 +45,10 @@ export class IssuedCodesController {
   }
 
   @Get('codes')
-  async getActiveCodes(@Query('issuedFor') issuedFor?: IssuedFor) {
+  async getActiveCodes(
+    @Query('issuedFor', new ParseEnumPipe(IssuedFor, { optional: true }))
+    issuedFor?: IssuedFor,
+  ) {
     return this.issuedCodesService.getActiveCodes(issuedFor);
   }
 
